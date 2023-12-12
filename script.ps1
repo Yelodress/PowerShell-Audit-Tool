@@ -61,11 +61,11 @@ $domainName = (Get-WmiObject Win32_ComputerSystem).Domain # Obtain the domain na
 $encryptionStatus = manage-bde -status C: | Out-String #Check if your computer is encrypted by BitLocker
 $isEncrypted = if ($encryptionStatus -match "Protection On") { "Yes" } else { "No" } # Write "Yes" or "No"
 
-$specificSoftware = "Your Sofware Name" # Define the software to research
-$softwareVersion = Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*, # Checking the \Uninstall folder
-                                   HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* |
-                   Where-Object { $_.DisplayName -like "*$specificSoftware*" } | # Searching for your software
-                   Select-Object -ExpandProperty DisplayVersion -First 1 # Get the sofware version
+#$specificSoftware = "Your Sofware Name" # Define the software to research
+#$softwareVersion = Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*, # Checking the \Uninstall folder
+#                                   HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* |
+#                   Where-Object { $_.DisplayName -like "*$specificSoftware*" } | # Searching for your software
+#                   Select-Object -ExpandProperty DisplayVersion -First 1 # Get the sofware version
 
 
 
@@ -77,7 +77,7 @@ $systemModel = $systemInfo.Model
 $osInfo = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, OSArchitecture
 $processorName = ($processorInfo | Select-Object -ExpandProperty Name)
 $systemMemory = [math]::Round($systemInfo.TotalPhysicalMemory / 1GB, 2)
-$systemMemoryGB = "$systemMemory Go"
+$systemMemoryGB = "$systemMemory GB"
 $totalSpace = Get-Volume | Where-Object { $_.DriveType -ne 'Removable' }
 $espaceTotal2 = ($totalSpace | Measure-Object -Property Size -Sum).Sum / 1GB
 $espaceTotalGo = [math]::Round($espaceTotal2, 2)
@@ -93,14 +93,15 @@ $combinedData = [PSCustomObject]@{
     CPU = $processorName
     GPU = $gpuName
     RAM = $systemMemoryGB
-    TotalDiskSpace = "$espaceTotalGo Go"
-    TotalFreeSpace = "$totalFreeSpaceGo Go"
+    TotalDiskSpace = "$espaceTotalGo GB"
+    TotalFreeSpace = "$totalFreeSpaceGo GB"
     OS = $osInfo.Caption
+#    Version = $osInfo.Version
     Architecture = $osInfo.OSArchitecture
     Domain = $domainName
-    SpecificSoft = $softwareVersion
+#    SpecificSoft = $softwareVersion
     Encryption = $isEncrypted
-#   Date = $currentDate
+#    Date = $currentDate
 }
 
 
