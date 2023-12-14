@@ -3,11 +3,12 @@
 |  _ \ _____      _____ _ __ / \  _   _  __| (_) |_ 
 | |_) / _ \ \ /\ / / _ \ '__/ _ \| | | |/ _` | | __|
 |  __/ (_) \ V  V /  __/ | / ___ \ |_| | (_| | | |_ 
-|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.1
+|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.1 patch 2
 "@
  
  Add-Type -AssemblyName PresentationFramework
 
+# Messagebox components definition
 $messageBoxText = "This script will collect some hardware and software information (such as your components, your disk space and your OS version).`nIf you don't want this, you can cancel the execution.`nExecute anyway ?"
 $caption = "Warning"
 $button = [System.Windows.MessageBoxButton]::OKCancel
@@ -17,17 +18,26 @@ $textUtf8 = [System.Text.Encoding]::UTF8.GetString($bytes)
 $bytes = [System.Text.Encoding]::Default.GetBytes($caption)
 $captionUtf8 = [System.Text.Encoding]::UTF8.GetString($bytes)
 
+$result = [System.Windows.MessageBox]::Show($textUtf8, $captionUtf8, $button, $icon) # Mixing all components
 
-
-$result = [System.Windows.MessageBox]::Show($textUtf8, $captionUtf8, $button, $icon)
-
-if ($result -eq "OK") {
+if ($result -eq "OK") {# If user clicked "OK"
     # User accepted
 } else {
     # User declined, canceling the script
     exit
 }
 
+$folderName = "Client-apps" #Defining the destination folder name
+
+if([System.IO.Directory]::Exists($folderName)) #If the folder exists
+{
+ #Folder exists :shocked_face:
+}
+else{ #Else
+    New-Item $folderName -ItemType Directory #Creating the folder 
+}
+
+#Getting the full installed software list
 $appsList = Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*,
                                   HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* |
                   Select-Object DisplayName, DisplayVersion, Publisher |
@@ -49,6 +59,9 @@ $totalFreeSpaceGo = [math]::Round($totalFreeSpace2, 2) # Divide the free space (
 $systemInfo = Get-CimInstance Win32_ComputerSystem | Select-Object Manufacturer, Model, TotalPhysicalMemory # Obtain PC specs
  
 $processorInfo = Get-CimInstance Win32_Processor | Select-Object Name # Obtain CPU model
+
+$cpuFrequency = (Get-WmiObject -Class Win32_Processor).MaxClockSpeed # Obtain CPU max frequency in Hz
+$cpuFrequencyGHz = $cpuFrequency / 1000 # Converting Hz to GHz
  
 $gpuInfo = Get-CimInstance Win32_VideoController | Select-Object Name # Obtain GPU model
 
@@ -86,26 +99,27 @@ $gpuName = ($gpuInfo | Select-Object -ExpandProperty Name)
  
 # Creating a global object
 $combinedData = [PSCustomObject]@{
-    Username = $userName
-    Model = $systemModel
-    Manufacturer = $systemManufacturer
-    ComputerName = $computerName
-    CPU = $processorName
-    GPU = $gpuName
-    RAM = $systemMemoryGB
-    TotalDiskSpace = "$espaceTotalGo GB"
-    TotalFreeSpace = "$totalFreeSpaceGo GB"
-    OS = $osInfo.Caption
-#    Version = $osInfo.Version
-    Architecture = $osInfo.OSArchitecture
-    Domain = $domainName
-#    SpecificSoft = $softwareVersion
-    Encryption = $isEncrypted
-#    Date = $currentDate
+    "Username" = $userName
+    "Model" = $systemModel
+    "Manufacturer" = $systemManufacturer
+    "Computer name" = $computerName
+    "CPU" = $processorName
+    "Frequency" = "$cpuFrequencyGHz GHz"
+    "GPU" = $gpuName
+    "RAM" = $systemMemoryGB
+    "Total disk space" = "$espaceTotalGo GB"
+    "Total free space" = "$totalFreeSpaceGo GB"
+    "OS" = $osInfo.Caption
+#    "Version" = $osInfo.Version
+    "Architecture" = $osInfo.OSArchitecture
+    "Domain" = $domainName
+#    "Specific software" = $softwareVersion
+    "Encryption" = $isEncrypted
+#    "Date" = $currentDate
 }
 
 
 # Export all data in CSV files
 $combinedData | Export-Csv -Path $fileName -Delimiter ";" -Append -NoTypeInformation
-$appsList | Export-Csv -Path $fileName2 -Delimiter ";" -Append -NoTypeInformation
+$appsList | Export-Csv -Path "$folderName\$fileName2" -Delimiter ";" -Append -NoTypeInformation
 
