@@ -1,3 +1,6 @@
+**Please note that this script is modular. Some parameters are in comments. Uncomment them to use them.**
+All changelog are noted in the commits.
+
 PowerAudit roadmap:
 
 - Finding Microsoft Office version
