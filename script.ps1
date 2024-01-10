@@ -3,7 +3,7 @@
 |  _ \ _____      _____ _ __ / \  _   _  __| (_) |_ 
 | |_) / _ \ \ /\ / / _ \ '__/ _ \| | | |/ _` | | __|
 |  __/ (_) \ V  V /  __/ | / ___ \ |_| | (_| | | |_ 
-|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.1 patch 2
+|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.1 patch 3
 "@
  
  Add-Type -AssemblyName PresentationFramework
@@ -34,7 +34,7 @@ if([System.IO.Directory]::Exists($folderName)) #If the folder exists
  #Folder exists :shocked_face:
 }
 else{ #Else
-    New-Item $folderName -ItemType Directory #Creating the folder 
+    New-Item $folderName -ItemType Directory | Out-Null #Creating the folder silently
 }
 
 #Getting the full installed software list
@@ -57,6 +57,8 @@ $totalFreeSpace2 = ($totalFreeSpace | Measure-Object -Property SizeRemaining -Su
 $totalFreeSpaceGo = [math]::Round($totalFreeSpace2, 2) # Divide the free space (in MB) to get in in GB
 
 $systemInfo = Get-CimInstance Win32_ComputerSystem | Select-Object Manufacturer, Model, TotalPhysicalMemory # Obtain PC specs
+
+$SN = (Get-WmiObject -Class Win32_BIOS).SerialNumber # Obtain S/N 
  
 $processorInfo = Get-CimInstance Win32_Processor | Select-Object Name # Obtain CPU model
 
@@ -65,7 +67,7 @@ $cpuFrequencyGHz = $cpuFrequency / 1000 # Converting Hz to GHz
  
 $gpuInfo = Get-CimInstance Win32_VideoController | Select-Object Name # Obtain GPU model
 
-#currentDate = Get-Date -Format "yyyy-MM-dd" # Obtain the date
+$currentDate = Get-Date -Format "yyyy-MM-dd" # Obtain the date
 
 $computerName = $env:COMPUTERNAME # Obtain the PC name
 
@@ -73,6 +75,21 @@ $domainName = (Get-WmiObject Win32_ComputerSystem).Domain # Obtain the domain na
 
 $encryptionStatus = manage-bde -status C: | Out-String #Check if your computer is encrypted by BitLocker
 $isEncrypted = if ($encryptionStatus -match "Protection On") { "Yes" } else { "No" } # Write "Yes" or "No"
+
+$365 = $appsList | Where-Object { $_.DisplayName -like "*365*"} # $365 take the name of 365 software
+$office = $appsList | Where-Object {$_.DisplayName -like "*Office*"} # $office take the name of Office software
+
+
+if ($365) { 
+    $365 =  if ($365 -match '=([^;]+)') { $matches[1] } else { $null } # Cut the text to only get the software version
+    $officeVersion = $365
+} elseif ($office) {
+    $office = if($office -match '=([^;]+)') {$matches[1]} else {$null} # Cut the text to only get the software version
+    $officeVersion = $office
+} else {
+    Write-Host "No Office version found."
+}
+
 
 #$specificSoftware = "Your Sofware Name" # Define the software to research
 #$softwareVersion = Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*, # Checking the \Uninstall folder
@@ -102,6 +119,7 @@ $combinedData = [PSCustomObject]@{
     "Username" = $userName
     "Model" = $systemModel
     "Manufacturer" = $systemManufacturer
+    "S/N" = $SN
     "Computer name" = $computerName
     "CPU" = $processorName
     "Frequency" = "$cpuFrequencyGHz GHz"
@@ -113,13 +131,13 @@ $combinedData = [PSCustomObject]@{
 #    "Version" = $osInfo.Version
     "Architecture" = $osInfo.OSArchitecture
     "Domain" = $domainName
+    "Office version" = $officeVersion
 #    "Specific software" = $softwareVersion
-    "Encryption" = $isEncrypted
-#    "Date" = $currentDate
+    "BitLocker encryption" = $isEncrypted
+    "Scan date" = $currentDate
 }
 
 
 # Export all data in CSV files
 $combinedData | Export-Csv -Path $fileName -Delimiter ";" -Append -NoTypeInformation
 $appsList | Export-Csv -Path "$folderName\$fileName2" -Delimiter ";" -Append -NoTypeInformation
-
