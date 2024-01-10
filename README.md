@@ -12,6 +12,7 @@ New features roadmap:
 Features improvement roadmap:
 - Finding Microsoft Office version (Working by using the sofware name for now)
 - Fixing the GPU detection if you're on a workstation
+- Getting the script more human readable by organizing the lines differently (it's PowerShell, we really don't care about performances)
 
 I'm open to all suggestions :)
 
