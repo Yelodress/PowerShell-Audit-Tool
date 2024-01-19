@@ -6,6 +6,7 @@ All changelog are noted in the commits.
 
 New features roadmap:
 - Checking if your computer uses a VPN
+- Checking if the computer uses a network card
 - Adding a progress bar during the script execution (kida cool i think)
 - ...
 
