@@ -24,8 +24,7 @@
 ## PowerAudit roadmap:
 
 ### New features roadmap:
-- Checking if your computer uses a VPN
-- Checking if the computer uses a network card
+- Checking if the computer uses an additional network card
 - ...
 
 ### Features improvement roadmap:
