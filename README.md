@@ -5,7 +5,7 @@ What's been added ?
   - Added the disks model
   - Added the multi-disks support
   - Added the multi-gpu support
-  - Added a progress bar (will be deployed in a next patch. You can use it, all code is in comment)
+  - Added a progress bar (will be deployed in a next patch. You can already use it, all code is in comment)
 
 What's been fixed ?  
   - Fixed the GPU scan
