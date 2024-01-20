@@ -1,5 +1,5 @@
 # PowerAudit v0.2 IS HERE !
-## Let's take a look at this update !
+## Let's take a look at this update:
 
 ### What's been added ?
   - Added the disks type (SSD / HDD)
