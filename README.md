@@ -1,20 +1,16 @@
-# PowerAudit v0.2 IS HERE !
+# PowerAudit v0.3 IS HERE !
 ## Let's take a look at this update:
 
 ### What's been added ?
-  - Added the disks type (SSD / HDD)
-  - Added the disks model
-  - Added the multi-disks support
-  - Added the multi-gpu support
-  - Added a progress bar (will be deployed in a next patch. You can already use it, all code is in comment)
+  - Added the number of cores of the CPU
+  - Added the BIOS version
+  - Added GPU driver version
+  - Added GPU lastest update date
 
 ### What's been fixed ?  
-  - Fixed the GPU scan
-  - Fixed the float RAM value
+  - Nothing. This script is ✨perfect✨
 
 ### Miscellaneous  
-  - Replaced old functions by more recent and stable
-  - Replaced the way the script gets the computer name
   - Removed some useless function calls
   - Various optimization
   - Maked the script more human readable than before
@@ -24,12 +20,14 @@
 ## PowerAudit roadmap:
 
 ### New features roadmap:
-- Checking if the computer uses an additional network card
 - ...
 
 ### Features improvement roadmap:
-- Finding Microsoft Office version (Working by using the sofware name for now)
+- Finding a new way to get the Office suite version (working with the software name for now)
+- ...
 
 I'm open to all suggestions :)
+
+If youre facing issues with this script, tell me [here](https://github.com/Yelodress/PowerShell-Audit-Tool/issues)
 
 **Please note that this script is modular. Some parameters are in comments. Uncomment them to use them.**
