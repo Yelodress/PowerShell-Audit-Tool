@@ -3,7 +3,7 @@
 |  _ \ _____      _____ _ __ / \  _   _  __| (_) |_ 
 | |_) / _ \ \ /\ / / _ \ '__/ _ \| | | |/ _` | | __|
 |  __/ (_) \ V  V /  __/ | / ___ \ |_| | (_| | | |_ 
-|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.2.1
+|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.3
 
 
 "@
@@ -73,44 +73,30 @@ $fileName2 = "Applications-" + $userName + ".csv"
 
 #-------------------------------------------- Full installed software list ---------------------------------------------
 
-$appsList = Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*,
-                                  HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* |
+$appsList = Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*, HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* |
                   Select-Object DisplayName, DisplayVersion, Publisher |
                   Where-Object { $_.DisplayName -ne $null } |
                   Sort-Object DisplayName
 
 #---------------------------------------------- Defining objects -----------------------------------------------
 
-$diskInfo = Get-PhysicalDisk | Where-Object { $_.DriveType -ne 'Removable' -and $_.DriveType -ne 'CD-ROM' -and $_.BusType -ne 'USB'} #Get the disk type and his RPM (if it's HDD) 
-    $diskType = ($diskInfo | ForEach-Object { $_.MediaType}) -join ', ' # Put , separator between disks
-    $diskModel = ($diskInfo | ForEach-Object { $_.Model}) -join ', ' # Put , separator between disks
-
 $systemInfo = Get-CimInstance Win32_ComputerSystem | Select-Object Manufacturer, Model, TotalPhysicalMemory, Domain # Obtain PC specs
 
-$osInfo = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, OSArchitecture, CSName # Obtain OS informations
-    $systemMemory = [math]::Round($systemInfo.TotalPhysicalMemory / 1GB, 2)
-        $systemMemoryRounded = [math]::Ceiling($systemMemory)
-            $systemMemoryGB = "$systemMemoryRounded GB"
+$biosInfo = Get-CimInstance Win32_BIOS | Select-Object SerialNumber, SMBIOSBIOSVersion # Obtain the computer S/N and BIOS version
 
-$SN = Get-CimInstance Win32_BIOS | Select-Object SerialNumber # Obtain the computer S/N
+$processorInfo = Get-CimInstance Win32_Processor | Select-Object Name, MaxClockSpeed, NumberOfCores # Obtain CPU name, max clock speed, Number of cores
 
-$processorInfo = Get-CimInstance Win32_Processor | Select-Object Name, MaxClockSpeed # Obtain CPU name and max clock speed
+$gpuInfo = Get-CimInstance Win32_VideoController | Where-Object { $_.Name -and $_.DriverVersion -and $_.DriverDate} # Obtain GPU info
  
-$gpuInfo = Get-CimInstance Win32_VideoController | ForEach-Object { $_.Name } # Obtain GPU model
-    $gpuList = $gpuInfo -join ', '
+$diskInfo = Get-PhysicalDisk | Where-Object { $_.DriveType -ne 'Removable' -and $_.DriveType -ne 'CD-ROM' -and $_.BusType -ne 'USB'} #Get the disk type and his RPM (if it's HDD)
 
-$currentDate = Get-Date -Format "yyyy-MM-dd" # Obtain the date
+$totalSpace = Get-Volume | Where-Object { $_.DriveType -ne 'Removable' -and $_.DriveType -ne 'CD-ROM' -and $_.BusType -ne 'USB'}  # Get the total volume ingoring USB, Removable and CD-ROM devices
 
+$osInfo = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, OSArchitecture, CSName # Obtain OS informations
 
 $encryptionStatus = manage-bde -status C: | Out-String #Check if your computer is encrypted by BitLocker
-    $isEncrypted = if ($encryptionStatus -match "Protection On") { "Yes" } else { "No" } # Write "Yes" or "No"
 
-
-$totalSpace = Get-Volume | Where-Object { $_.DriveType -ne 'Removable' -and $_.DriveType -ne 'CD-ROM' -and $_.BusType -ne 'USB'}  # Get the total volume ingore USB, Removable and CD-ROM devices
-    $totalSpace2 = ($totalSpace | Measure-Object -Property Size -Sum).Sum / 1GB
-        $totalSpaceGo = [math]::Round($totalSpace2, 2)
-    $totalFreeSpace = ($totalSpace | Measure-Object -Property SizeRemaining -Sum).Sum / 1GB # Measure the free space
-        $totalFreeSpaceGo = [math]::Round($totalFreeSpace, 2) # Divide the free space (in MB) to get in in GB
+$currentDate = Get-Date -Format "yyyy-MM-dd" # Obtain the date
 
 #----------------------------------------------- Finding office licence ------------------------------------------------
 
@@ -142,23 +128,27 @@ $combinedData = [PSCustomObject]@{
     "Username" = $userName
     "Model" = $systemInfo.Model
     "Manufacturer" = $systemInfo.Manufacturer
-    "S/N" = $SN.SerialNumber
+    "S/N" = $biosInfo.SerialNumber
+    "BIOS Version" = $biosInfo.SMBIOSBIOSVersion
     "Computer name" = $osInfo.CSName
     "CPU" = $processorInfo.Name
+    "NUmber of cores" = $processorInfo.NumberOfCores
     "Frequency" = ($processorInfo.MaxClockSpeed /1000).ToString() + " GHz"
-    "GPU" = $gpuList
-    "RAM" = $systemMemoryGB
-    "Total disk space" = "$totalSpaceGo GB"
-    "Total free space" = "$totalFreeSpaceGo GB"
-    "Disks type" = $diskType
-    "Disks model" = $diskModel
+    "GPU" = ($gpuInfo | ForEach-Object {$_.Name}) -join ', '
+    "GPU driver version" = ($gpuInfo | ForEach-Object {$_.DriverVersion}) -join ', '
+    "GPU Driver date" = ($gpuInfo | ForEach-Object {$_.DriverDate.ToShortDateString()}) -join ', '
+    "RAM" = [math]::Ceiling([math]::Round($systemInfo.TotalPhysicalMemory / 1GB, 2)).ToString() + " GB"
+    "Total disk space" = [math]::Round(($totalSpace | Measure-Object -Property Size -Sum).Sum / 1GB, 2).ToString() + " GB"
+    "Total free space" = [math]::Round(($totalSpace | Measure-Object -Property SizeRemaining -Sum).Sum / 1GB, 2).ToString() + " GB" 
+    "Disks type" = ($diskInfo | ForEach-Object { $_.MediaType}) -join ', '
+    "Disks model" = ($diskInfo | ForEach-Object { $_.Model}) -join ', '
     "OS" = $osInfo.Caption
     "Version" = $osInfo.Version
     "Architecture" = $osInfo.OSArchitecture
     "Domain" = $systemInfo.Domain
     "Office version" = $officeVersion
 #    "Specific software" = $softwareVersion
-    "BitLocker encryption" = $isEncrypted
+    "BitLocker encryption" = if ($encryptionStatus -match "Protection On") { "Yes" } else { "No" }
     "Scan date" = $currentDate
 }
 
