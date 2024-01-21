@@ -14,6 +14,7 @@
   - Removed some useless function calls
   - Various optimization
   - Maked the script more human readable than before
+  - The progress bar is still in comment. You can already use it.
 
 
 
