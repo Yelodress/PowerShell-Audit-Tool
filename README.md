@@ -21,6 +21,8 @@
 ## PowerAudit roadmap:
 
 ### New features roadmap:
+- Getting the disks health status
+- Getting external network cards informations
 - ...
 
 ### Features improvement roadmap:
