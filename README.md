@@ -24,6 +24,7 @@
 - Getting the disks health status
 - Getting external network cards informations
 - Getting the computer intitial install date
+- Getting the last digits of the office licence key
 - ...
 
 ### Features improvement roadmap:
