@@ -23,6 +23,7 @@
 ### New features roadmap:
 - Getting the disks health status
 - Getting external network cards informations
+- Getting the computer intitial install date
 - ...
 
 ### Features improvement roadmap:
