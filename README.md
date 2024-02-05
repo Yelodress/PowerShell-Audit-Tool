@@ -24,7 +24,8 @@
 - Getting the disks health status
 - Getting external network cards informations
 - Getting the computer intitial install date
-- Getting the last digits of the office licence key
+- The ability to choose the folder's name (maybe in a textbox)
+- A parallel script (not in PowerShell) if you're running it under Win 8.1
 - ...
 
 ### Features improvement roadmap:
