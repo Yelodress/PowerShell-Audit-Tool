@@ -16,7 +16,7 @@
   - Removed useless calls for the Message Box
   - $specificSoftware is now called one time
   - Improved the way $applist locate installed programs by adding a third path
-  - Removed the Office version (you have a perfectly working $specificSoftware for this)
+  - Removed the Office version checking (you have a perfectly working $specificSoftware for this)
   - Reworked the way out files are named
 
 
