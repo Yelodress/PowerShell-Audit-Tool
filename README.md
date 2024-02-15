@@ -5,7 +5,7 @@
   - Added the disk health status
   - Added the initial Windows install date
   - Added the disk partition type
-  - Added the progress bar(finally !)
+  - Added the progress bar (finally !)
 
 ### What's been fixed ?  
   - Nothing. This script is ✨perfect✨
