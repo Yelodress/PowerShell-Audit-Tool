@@ -3,7 +3,7 @@
 |  _ \ _____      _____ _ __ / \  _   _  __| (_) |_ 
 | |_) / _ \ \ /\ / / _ \ '__/ _ \| | | |/ _` | | __|
 |  __/ (_) \ V  V /  __/ | / ___ \ |_| | (_| | | |_ 
-|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.4
+|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.4.1
 
 
 "@
@@ -93,6 +93,21 @@ $initialInstallDate = Get-ItemProperty 'HKLM:\Software\Microsoft\Windows NT\Curr
 
 $appsList = Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*, HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*, HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* # Registery key
 
+#---------------------------------------------- Searching for Office app -----------------------------------------------
+
+$365 = $appsList | Where-Object { $_.DisplayName -like "*365*"} | Select-Object -ExpandProperty DisplayName # $365 take the app name found
+$365 = $365 -replace '^Microsoft ', '' -replace ' -.*$', ''
+$office = $appsList | Where-Object {$_.DisplayName -like "*Microsoft Office*" -and $_.Displayname -notlike "*Microsoft Teams*"} | Select-Object -ExpandProperty DisplayName # $office take the app name found
+$office = $office -replace '^Microsoft ', '' -replace ' -.*$', ''
+
+if ($365) { # If $365 contain something
+    $officeVersion = $365
+} elseif ($office) { # If $office contain something
+    $officeVersion = $office
+} else {
+    Write-Host "No office app found."
+}
+
 #------------------------------------------------- Creating global tab --------------------------------------------------
 
 $stepName = "Generating tab"
@@ -122,6 +137,7 @@ $combinedData = [PSCustomObject]@{
     "Version" = $osInfo.Version
     "Architecture" = $osInfo.OSArchitecture
     "Domain" = $systemInfo.Domain
+    "Office Version" = $officeVersion
 #   "Specific software" = $appsList | Where-Object { $_.DisplayName -like "* YourSoftwareName *" } | Select-Object -ExpandProperty DisplayVersion -First 1 # Searching for a specific software version
     "BitLocker encryption" = if ($encryptionStatus -match "Protection On") { "Yes" } else { "No" }
     "Initial install date" = ((Get-Date 01.01.1970)+([System.TimeSpan]::fromseconds($initialInstallDate))).ToString("yyyy-MM-dd")
