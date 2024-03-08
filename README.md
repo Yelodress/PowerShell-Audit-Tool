@@ -5,10 +5,12 @@
   - Added documentation.md
   - You can now check if you're admin
   - Apps list now have a unique ID
+  - Added the network configuration (IP, Gateway, DNS, DHCP)
 
 ### What's been optimized ?  
   - The Microsoft Office app search have been optimized
   - `$networkConf` is now moved to the step 2
+  - The way you get the username
 
 ### What's been removed ?
   - Removed the messagebox
