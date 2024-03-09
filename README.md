@@ -33,6 +33,7 @@ As a modular script, you can see all unused functions in the [documentation](htt
 - adding the ability to choose the output format (maybe in a textbox)
 - checking others disks for Bitlocker's encryption
 - Improve the progress-bar design
+- Improve Bitlocker checking
 
 
 I'm open to all suggestions :)
