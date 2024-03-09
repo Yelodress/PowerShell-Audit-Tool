@@ -31,6 +31,8 @@ As a modular script, you can see all unused functions in the [documentation](htt
 ## 🚧 Roadmap:
 - adding the ability to choose the folder's name (maybe in a textbox)
 - adding the ability to choose the output format (maybe in a textbox)
+- checking others disks for Bitlocker's encryption
+- Improve the progress-bar design
 
 
 I'm open to all suggestions :)
