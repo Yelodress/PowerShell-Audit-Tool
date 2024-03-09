@@ -1,5 +1,5 @@
 @echo off
 
-powershell.exe -ExecutionPolicy Bypass -File script.ps1
+powershell.exe -ExecutionPolicy Bypass -File PowerAudit.ps1
 
 pause
