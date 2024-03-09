@@ -28,8 +28,7 @@ As a modular script, you can see all unused functions in the [documentation](htt
         └── user-id.csv - contain user installed software's
 </pre>
 
-
-## 🚧 PowerAudit roadmap:
+## 🚧 Roadmap:
 - adding the ability to choose the folder's name (maybe in a textbox)
 - adding the ability to choose the output format (maybe in a textbox)
 
@@ -37,3 +36,40 @@ As a modular script, you can see all unused functions in the [documentation](htt
 I'm open to all suggestions :)
 
 If you're facing issues with this script, tell me [here](https://github.com/Yelodress/PowerShell-Audit-Tool/issues).
+
+## Collected data 
+### Hardware
+- <img src="https://api.iconify.design/bi:motherboard-fill.svg" height="15" style="filter: invert()"> Motherboard model
+- <img src="https://api.iconify.design/bi:motherboard-fill.svg" height="15" style="filter: invert()"> Motherboard serial number
+- <img src="https://api.iconify.design/bi:motherboard-fill.svg" height="15" style="filter: invert()"> Motherboard BIOS version
+- <img src="https://api.iconify.design/ri:cpu-line.svg" height="15" style="filter: invert()"> Computer's architecture
+- <img src="https://api.iconify.design/ri:cpu-line.svg" height="15" style="filter: invert()"> CPU model
+- <img src="https://api.iconify.design/ri:cpu-line.svg" height="15" style="filter: invert()"> CPU cores
+- <img src="https://api.iconify.design/ri:cpu-line.svg" height="15" style="filter: invert()"> CPU frequency
+- <img src="https://api.iconify.design/bi:gpu-card.svg" height="15" style="filter: invert()"> GPU model
+- <img src="https://api.iconify.design/bi:gpu-card.svg" height="15" style="filter: invert()"> GPU Drivers version
+- <img src="https://api.iconify.design/bi:gpu-card.svg" height="15" style="filter: invert()"> GPU drivers release date
+- <img src="https://api.iconify.design/clarity:memory-solid.svg" height="15" style="filter: invert()"> RAM amount
+- <img src="https://api.iconify.design/mdi:harddisk.svg" height="15" style="filter: invert()"> Total Disk space
+- <img src="https://api.iconify.design/mdi:harddisk.svg" height="15" style="filter: invert()"> Total Free space
+- <img src="https://api.iconify.design/mdi:harddisk.svg" height="15" style="filter: invert()"> Disks types
+- <img src="https://api.iconify.design/mdi:harddisk.svg" height="15" style="filter: invert()"> Disks models
+- <img src="https://api.iconify.design/mdi:harddisk.svg" height="15" style="filter: invert()"> Disk health status
+- <img src="https://api.iconify.design/mdi:harddisk.svg" height="15" style="filter: invert()"> Disk partition type
+### Sofware
+- <img src="https://api.iconify.design/mdi:account.svg" height="15" style="filter: invert()"> Username
+- <img src="https://api.iconify.design/material-symbols:admin-panel-settings.svg" height="15" style="filter: invert()"> User administrator status
+- <img src="https://api.iconify.design/ph:computer-tower-fill.svg" height="15" style="filter: invert()"> Computer's hostname
+- <img src="https://api.iconify.design/mdi:microsoft-windows.svg" height="15" style="filter: invert()"> Windows version
+- <img src="https://api.iconify.design/material-symbols:domain.svg" height="15" style="filter: invert()"> Domain
+- <img src="https://api.iconify.design/mdi:ip-network.svg" height="15" style="filter: invert()"> IP address
+- <img src="https://api.iconify.design/material-symbols:router.svg" height="15" style="filter: invert()"> Gateway
+- <img src="https://api.iconify.design/material-symbols:dns.svg" height="15" style="filter: invert()"> DNS
+- <img src="https://api.iconify.design/mdi:server.svg" height="15" style="filter: invert()"> DHCP status
+- <img src="https://api.iconify.design/material-symbols:lock.svg" height="15" style="filter: invert()"> Bitlocker status
+- <img src="https://api.iconify.design/mdi:microsoft-office.svg" height="15" style="filter: invert()"> office installed version
+- <img src="https://api.iconify.design/material-symbols:calendar-month.svg" height="15" style="filter: invert()"> Windows installation date
+### Apps
+- <img src="https://api.iconify.design/mdi:file.svg" height="15" style="filter: invert()"> Name
+- <img src="https://api.iconify.design/mdi:file-arrow-left-right.svg" height="15" style="filter: invert()"> Version
+- <img src="https://api.iconify.design/mdi:file-account.svg" height="15" style="filter: invert()"> Publisher
