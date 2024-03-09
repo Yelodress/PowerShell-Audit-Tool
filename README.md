@@ -12,12 +12,12 @@ an open source powershell script for retrieving Windows computers specifications
 - ⚡ Extremely fast
 - 👍 Really Simple - one single script
 - 🔧 Modular
-- ☁️ Lightweight
+- 🍃 Lightweight
 
-## Documentation
+## 📓 Documentation
 As a modular script, you can see all unused functions in the [documentation](https://github.com/spartanfant0me/PowerShell-Audit-Tool/wiki/Documentation).
 
-## Ouput
+## 📁 Ouput
 <pre>
 ├── PowerAudit.exe / script.ps1
 └── output
@@ -29,7 +29,7 @@ As a modular script, you can see all unused functions in the [documentation](htt
 </pre>
 
 
-## PowerAudit roadmap:
+## 🚧 PowerAudit roadmap:
 - adding the ability to choose the folder's name (maybe in a textbox)
 - adding the ability to choose the output format (maybe in a textbox)
 
