@@ -19,7 +19,7 @@ As a modular script, you can see all unused functions in the [documentation](htt
 
 ## Ouput
 <pre>
-├── PowerAudit.exe
+├── PowerAudit.exe / script.ps1
 └── output
     ├── result.csv - contain computer specific informations
     └── apps-list
