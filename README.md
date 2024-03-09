@@ -1,7 +1,7 @@
 <div align="center">
 <h1>PowerAudit</h1>
 <img alt="Static Badge" src="https://img.shields.io/badge/windows_version-8.1_%7C_10_%7C_11-green?style=for-the-badge&logo=windows&labelColor=%23313244&color=%2389dceb" style="margin-right: 10px">
-<img alt="Static Badge" src="https://img.shields.io/badge/Release-v0.5-green?style=for-the-badge&labelColor=%23313244&color=%23a6e3a1" style="margin-right: 10px">
+<img alt="Static Badge" src="https://img.shields.io/badge/Release-v0.5.1-green?style=for-the-badge&labelColor=%23313244&color=%23a6e3a1" style="margin-right: 10px">
 <h3>
 an open source powershell script for retrieving Windows computers specifications and storing them in CSV files.
 </h3>
