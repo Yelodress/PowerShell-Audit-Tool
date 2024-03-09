@@ -1,6 +1,6 @@
 # Documentation
 
-### Please note that this script is modular. Some parameters are in comments. Uncomment them to use them.
+### ⚠️ Please note that this script is modular. Some parameters are in comments. Uncomment them to use them.
 
 ## UFT-8 conversion
 If you're facing an issue with special characters in your custom text, consider converting them to UTF-8:
