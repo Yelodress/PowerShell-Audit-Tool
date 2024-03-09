@@ -51,7 +51,7 @@ $biosInfo = Get-CimInstance Win32_BIOS | Select-Object SerialNumber, SMBIOSBIOSV
 
 $processorInfo = Get-CimInstance Win32_Processor | Select-Object Name, MaxClockSpeed, NumberOfCores # Obtain CPU name, max clock speed, Number of cores
 
-$gpuInfo = Get-CimInstance Win32_VideoController | Where-Object { $_.Name -and $_.DriverVersion -and $_.DriverDate } # Obtain GPU info
+$gpuInfo = Get-CimInstance Win32_VideoController | Where-Object { ($_.Name -notlike '*virtual*') -and $_.DriverVersion -and $_.DriverDate } # Obtain GPU info
 
 #---------------------------------------------- Disks informations -----------------------------------------------
 $stepName = "Getting disks informations"
