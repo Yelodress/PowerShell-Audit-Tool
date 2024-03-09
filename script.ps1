@@ -29,18 +29,22 @@ function Show-CustomProgressBar {
 }
 
 #----------------------------------------------- Folder creation ------------------------------------------------
-$stepName = "Creating folder"
+$stepName = "Creating folders"
 Show-CustomProgressBar -CurrentStep 1 -TotalSteps $TotalSteps
 
-$folderName = "apps-list" #Defining the destination folder name
+$appFolderName = "apps-list" #Defining the destination folder name
+$outputFolderName = "output" #Defining the destination folder name
 
-if ([System.IO.Directory]::Exists($folderName)) { #If the folder exists
+if ([System.IO.Directory]::Exists($outputFolderName)) { #If the folder exists
     #Folder exists :shocked_face:
 }
 else {
     #Else
-    New-Item $folderName -ItemType Directory | Out-Null #Creating the folder silently
+    New-Item $outputFolderName -ItemType Directory | Out-Null #Creating the output folder silently
+    New-Item "$outputFolderName\$appFolderName" -ItemType Directory | Out-Null #Creating the app folder silently
 }
+
+
 
 #---------------------------------------------- Defining objects -----------------------------------------------
 
@@ -139,5 +143,5 @@ Show-CustomProgressBar -CurrentStep 6 -TotalSteps $TotalSteps
 $fileName = "results.csv"
 $fileName2 = $systemInfo.UserName.Split('\')[-1] + "-" + $scanID + ".csv"
 
-$combinedData | Export-Csv -Path $fileName -Delimiter ";" -Append -NoTypeInformation
-$appsList | Select-Object DisplayName, DisplayVersion, Publisher | Where-Object { $_.DisplayName -ne $null } | Sort-Object DisplayName | Export-Csv -Path "$folderName\$fileName2" -Delimiter ";" -Append -NoTypeInformation
+$combinedData | Export-Csv -Path "$outputFolderName\$fileName" -Delimiter ";" -Append -NoTypeInformation
+$appsList | Select-Object DisplayName, DisplayVersion, Publisher | Where-Object { $_.DisplayName -ne $null } | Sort-Object DisplayName | Export-Csv -Path "$outputFolderName\$appFolderName\$fileName2" -Delimiter ";" -Append -NoTypeInformation
