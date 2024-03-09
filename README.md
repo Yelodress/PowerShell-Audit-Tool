@@ -15,7 +15,7 @@ an open source powershell script for retrieving Windows computers specifications
 - 🍃 Lightweight
 
 ## 📓 Documentation
-As a modular script, you can see all unused functions in the [documentation](https://github.com/Yelodress/PowerShell-Audit-Tool/blob/main/documentation.md).
+As a modular script, you can see all unused functions in the [documentation](https://github.com/Yelodress/PowerShell-Audit-Tool/wiki/Documentation).
 
 ## 📁 Ouput
 <pre>
