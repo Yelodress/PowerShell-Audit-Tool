@@ -42,38 +42,48 @@ If you're facing issues with this script, tell me [here](https://github.com/Yelo
 
 ## Collected data 
 ### Hardware
-- <img src="https://api.iconify.design/bi:motherboard-fill.svg?color=%23cdd6f4" height="15" alt=""> Motherboard manufacturer
-- <img src="https://api.iconify.design/bi:motherboard-fill.svg?color=%23cdd6f4" height="15" alt=""> Motherboard model
-- <img src="https://api.iconify.design/bi:motherboard-fill.svg?color=%23cdd6f4" height="15" alt=""> Motherboard serial number
-- <img src="https://api.iconify.design/bi:motherboard-fill.svg?color=%23cdd6f4" height="15" alt=""> Motherboard BIOS version
-- <img src="https://api.iconify.design/ri:cpu-line.svg?color=%23cdd6f4" height="15" alt=""> CPU model
-- <img src="https://api.iconify.design/ri:cpu-line.svg?color=%23cdd6f4" height="15" alt=""> CPU cores
-- <img src="https://api.iconify.design/ri:cpu-line.svg?color=%23cdd6f4" height="15" alt=""> CPU frequency
-- <img src="https://api.iconify.design/bi:gpu-card.svg?color=%23cdd6f4" height="15" alt=""> GPU model
-- <img src="https://api.iconify.design/bi:gpu-card.svg?color=%23cdd6f4" height="15" alt=""> GPU drivers version
-- <img src="https://api.iconify.design/bi:gpu-card.svg?color=%23cdd6f4" height="15"  alt=""> GPU drivers release date
-- <img src="https://api.iconify.design/clarity:memory-solid.svg?color=%23cdd6f4" height="15"  alt=""> RAM amount
-- <img src="https://api.iconify.design/mdi:harddisk.svg?color=%23cdd6f4" height="15"  alt=""> Total disk space
-- <img src="https://api.iconify.design/mdi:harddisk.svg?color=%23cdd6f4" height="15"  alt=""> Total free space
-- <img src="https://api.iconify.design/mdi:harddisk.svg?color=%23cdd6f4" height="15"  alt=""> Disks types
-- <img src="https://api.iconify.design/mdi:harddisk.svg?color=%23cdd6f4" height="15"  alt=""> Disks models
-- <img src="https://api.iconify.design/mdi:harddisk.svg?color=%23cdd6f4" height="15"  alt=""> Disk health status
-- <img src="https://api.iconify.design/mdi:harddisk.svg?color=%23cdd6f4" height="15"  alt=""> Disk partition type
-### Sofware
-- <img src="https://api.iconify.design/mdi:account.svg?color=%23cdd6f4" height="15"  alt=""> Username
-- <img src="https://api.iconify.design/material-symbols:admin-panel-settings.svg?color=%23cdd6f4" height="15"  alt=""> User administrator status
-- <img src="https://api.iconify.design/ph:computer-tower-fill.svg?color=%23cdd6f4" height="15"  alt=""> Computer's hostname
-- <img src="https://api.iconify.design/mdi:microsoft-windows.svg?color=%23cdd6f4" height="15"  alt=""> Windows version
-- <img src="https://api.iconify.design/mdi:microsoft-windows.svg?color=%23cdd6f4" height="15"  alt=""> Windows achitecture
-- <img src="https://api.iconify.design/material-symbols:domain.svg?color=%23cdd6f4" height="15"  alt=""> Domain
-- <img src="https://api.iconify.design/mdi:ip-network.svg?color=%23cdd6f4" height="15"  alt=""> IP address
-- <img src="https://api.iconify.design/material-symbols:router.svg?color=%23cdd6f4" height="15"  alt=""> Gateway
-- <img src="https://api.iconify.design/material-symbols:dns.svg?color=%23cdd6f4" height="15"  alt=""> DNS
-- <img src="https://api.iconify.design/mdi:server.svg?color=%23cdd6f4" height="15"  alt=""> DHCP status
-- <img src="https://api.iconify.design/material-symbols:lock.svg?color=%23cdd6f4" height="15"  alt=""> Bitlocker status
-- <img src="https://api.iconify.design/mdi:microsoft-office.svg?color=%23cdd6f4" height="15"  alt=""> Office installed version
-- <img src="https://api.iconify.design/material-symbols:calendar-month.svg?color=%23cdd6f4" height="15"  alt=""> Windows installation date
-### Apps
-- <img src="https://api.iconify.design/mdi:file.svg?color=%23cdd6f4" height="15"  alt=""> Name
-- <img src="https://api.iconify.design/mdi:file-arrow-left-right.svg?color=%23cdd6f4" height="15"  alt=""> Version
-- <img src="https://api.iconify.design/mdi:file-account.svg?color=%23cdd6f4" height="15"  alt=""> Publisher
+#### <img src="https://api.iconify.design/bi:motherboard-fill.svg?color=%23cdd6f4" height="15" alt="">  Motherboard
+- Manufacturer
+- Model
+- Serial number
+- BIOS version
+#### <img src="https://api.iconify.design/ri:cpu-line.svg?color=%23cdd6f4" height="15" alt=""> CPU 
+- Model
+- Cores
+- Frequency
+#### <img src="https://api.iconify.design/bi:gpu-card.svg?color=%23cdd6f4" height="15" alt=""> GPU
+- Model
+- Drivers version
+- Drivers release date
+#### <img src="https://api.iconify.design/clarity:memory-solid.svg?color=%23cdd6f4" height="15"  alt=""> GPU
+ RAM amount
+#### <img src="https://api.iconify.design/mdi:harddisk.svg?color=%23cdd6f4" height="15"  alt=""> Disks
+- Total space
+- Total free space
+- Types
+- Models
+- Health status
+- Partition type
+### System
+#### <img src="https://api.iconify.design/mdi:account.svg?color=%23cdd6f4" height="15"  alt=""> User
+- Username
+- User administrator status
+#### <img src="https://api.iconify.design/material-symbols:router.svg?color=%23cdd6f4" height="15"  alt=""> Network configuration
+- Domain
+- IP address
+- Gateway
+- DNS
+- DHCP status
+#### <img src="https://api.iconify.design/mdi:microsoft-windows.svg?color=%23cdd6f4" height="15"  alt=""> Operating system
+- Version
+- Achitecture
+- Installation date
+- Computer's hostname
+#### <img src="https://api.iconify.design/material-symbols:lock.svg?color=%23cdd6f4" height="15"  alt=""> Security
+- Bitlocker status
+#### <img src="https://api.iconify.design/mdi:microsoft-office.svg?color=%23cdd6f4" height="15"  alt=""> Office
+- Office installed version
+###  <img src="https://api.iconify.design/material-symbols:deployed-code-update.svg?color=%23cdd6f4" height="15"  alt=""> Apps
+- Name
+- Version
+- Publisher
