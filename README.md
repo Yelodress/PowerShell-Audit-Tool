@@ -55,7 +55,7 @@ If you're facing issues with this script, tell me [here](https://github.com/Yelo
 - Model
 - Drivers version
 - Drivers release date
-#### <img src="https://api.iconify.design/clarity:memory-solid.svg?color=%23cdd6f4" height="15"  alt=""> GPU
+#### <img src="https://api.iconify.design/clarity:memory-solid.svg?color=%23cdd6f4" height="15"  alt=""> RAM
  RAM amount
 #### <img src="https://api.iconify.design/mdi:harddisk.svg?color=%23cdd6f4" height="15"  alt=""> Disks
 - Total space
