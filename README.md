@@ -77,8 +77,6 @@ If you're facing issues with this script, tell me [here](https://github.com/Yelo
 - Achitecture
 - Installation date
 - Computer's hostname
-#### <img src="https://api.iconify.design/material-symbols:lock.svg?color=%23cdd6f4" height="15"  alt=""> Security
-- Bitlocker status
 #### <img src="https://api.iconify.design/mdi:microsoft-office.svg?color=%23cdd6f4" height="15"  alt=""> Office
 - Office installed version
 ###  <img src="https://api.iconify.design/material-symbols:deployed-code-update.svg?color=%23cdd6f4" height="15"  alt=""> Apps
