@@ -1,7 +1,7 @@
 <div align="center">
 <h1>PowerAudit</h1>
 <img alt="Static Badge" src="https://img.shields.io/badge/windows_version-8.1_%7C_10_%7C_11-green?style=for-the-badge&logo=windows&labelColor=%23313244&color=%2389dceb" style="margin-right: 10px">
-<img alt="Static Badge" src="https://img.shields.io/badge/Release-v0.5.3-green?style=for-the-badge&labelColor=%23313244&color=%23a6e3a1" style="margin-right: 10px">
+<img alt="Static Badge" src="https://img.shields.io/badge/Release-v0.6-green?style=for-the-badge&labelColor=%23313244&color=%23a6e3a1" style="margin-right: 10px">
 <h3>
 an open source powershell script for retrieving Windows computers specifications and storing them in CSV files.
 </h3>
@@ -54,7 +54,10 @@ If you're facing issues with this script, tell me [here](https://github.com/Yelo
 - Drivers version
 - Drivers release date
 #### <img src="https://api.iconify.design/clarity:memory-solid.svg?color=%23cdd6f4" height="15"  alt=""> RAM
- RAM amount
+- RAM Manufacturer
+- Total RAM amount
+- RAM channels
+- RAM slots
 #### <img src="https://api.iconify.design/mdi:harddisk.svg?color=%23cdd6f4" height="15"  alt=""> Disks
 - Total space
 - Total free space
@@ -77,6 +80,9 @@ If you're facing issues with this script, tell me [here](https://github.com/Yelo
 - Achitecture
 - Installation date
 - Computer's hostname
+### Others
+#### <img src="https://api.iconify.design/mdi:printer.svg?color=%23cdd6f4" height="15"  alt=""> Peripherals
+- Printer(s) name(s)
 #### <img src="https://api.iconify.design/mdi:microsoft-office.svg?color=%23cdd6f4" height="15"  alt=""> Office
 - Office installed version
 ###  <img src="https://api.iconify.design/material-symbols:deployed-code-update.svg?color=%23cdd6f4" height="15"  alt=""> Apps
