@@ -3,7 +3,7 @@
 |  _ \ _____      _____ _ __ / \  _   _  __| (_) |_ 
 | |_) / _ \ \ /\ / / _ \ '__/ _ \| | | |/ _` | | __|
 |  __/ (_) \ V  V /  __/ | / ___ \ |_| | (_| | | |_ 
-|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.5.1
+|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.5.2
 
 
 "@
@@ -152,12 +152,23 @@ $combinedData = [PSCustomObject]@{
 }
 
 #----------------------------------------------- Exporting all CSV files ------------------------------------------------
-
 $stepName = "Exporting files"
 Show-CustomProgressBar -CurrentStep 12 -TotalSteps $TotalSteps
 
-$fileName = "results.csv"
-$fileName2 = $systemInfo.UserName.Split('\')[-1] + "-" + $scanID + ".csv"
+$fileName = "results"
+$fileName2 = $systemInfo.UserName.Split('\')[-1] + "-" + $scanID
 
-$combinedData | Export-Csv -Path "$outputFolderName\$fileName" -Delimiter ";" -Append -NoTypeinformation
-$appsList | Select-Object DisplayName, DisplayVersion, Publisher | Where-Object { $_.DisplayName -ne $null } | Sort-Object DisplayName | Export-Csv -Path "$outputFolderName\$appFolderName\$fileName2" -Delimiter ";" -Append -NoTypeinformation
+Write-Host "Choose your output format"
+Write-Host "1: CSV"
+Write-Host "2: JSON"
+$choice = Read-Host "Choice: "
+
+if ($choice -eq "1") {
+    $combinedData | Export-Csv -Path "$outputFolderName\$fileName.csv" -Delimiter ";" -Append -NoTypeinformation
+    $appsList | Select-Object DisplayName, DisplayVersion, Publisher | Where-Object { $_.DisplayName -ne $null } | Sort-Object DisplayName | Export-Csv -Path "$outputFolderName\$appFolderName\$fileName2.csv" -Delimiter ";" -Append -NoTypeinformation
+} elseif ($choice -eq "2") {
+    $combinedData | ConvertTo-Json | out-File "$outputFolderName\$fileName.json"
+    $appsList | Select-Object DisplayName, DisplayVersion, Publisher | Where-Object { $_.DisplayName -ne $null } | Sort-Object DisplayName | ConvertTo-Json | Out-File  "$outputFolderName\$appFolderName\$fileName2.json"
+} else {
+    Write-Host "Not valid."
+}
