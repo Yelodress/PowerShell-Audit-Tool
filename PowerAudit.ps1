@@ -3,14 +3,14 @@
 |  _ \ _____      _____ _ __ / \  _   _  __| (_) |_ 
 | |_) / _ \ \ /\ / / _ \ '__/ _ \| | | |/ _` | | __|
 |  __/ (_) \ V  V /  __/ | / ___ \ |_| | (_| | | |_ 
-|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.5.2
+|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.5.3
 
 
 "@
 
 #-------------------------------------------- Progress-bar definition ---------------------------------------------
 
-$TotalSteps = 12 
+$TotalSteps = 11 
 
 function Show-CustomProgressBar {
     param (
@@ -21,7 +21,7 @@ function Show-CustomProgressBar {
     $ProgressWidth = 50 
     $ProgressBar = [string]::Join('', ('o' * [math]::Round(($CurrentStep / $TotalSteps) * $ProgressWidth)))
     
-    Write-Host -NoNewline "`r[$ProgressBar] $([math]::Round(($CurrentStep / $TotalSteps) * 12))/12 $stepName"
+    Write-Host -NoNewline "`r[$ProgressBar] $([math]::Round(($CurrentStep / $TotalSteps) * 11))/11 $stepName"
 
     if ($CurrentStep -eq $TotalSteps) {
         Write-Host ""  
@@ -77,20 +77,14 @@ Show-CustomProgressBar -CurrentStep 5 -TotalSteps $TotalSteps
 
 $networkConf = Get-CimInstance Win32_NetworkAdapterConfiguration -Filter "IPEnabled = TRUE" # Obtain infos about network cards that have an IP address
 
-#---------------------------------------------- Encryption status -----------------------------------------------
-$stepName = "Getting encryption status"
-Show-CustomProgressBar -CurrentStep 6 -TotalSteps $TotalSteps
-
-$encryptionStatus = manage-bde -status C: | Out-String #Check if your computer is encrypted by BitLocker
-
 #---------------------------------------------- Listing programs -----------------------------------------------
 $stepName = "Listing all programs"
-Show-CustomProgressBar -CurrentStep 7 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 6 -TotalSteps $TotalSteps
 $appsList = Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*, HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*, HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* # Registery key
 
 #---------------------------------------------- Scan informations-----------------------------------------------
 $stepName = "Generating scan informations"
-Show-CustomProgressBar -CurrentStep 8 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 7 -TotalSteps $TotalSteps
 
 $currentDate = Get-Date -Format "yyyy-MM-dd" # Obtain the date
 $scanID = [Guid]::NewGuid().ToString("N").Substring(0, 8)  # Taking first 8 characters
@@ -98,13 +92,13 @@ $scanID = [Guid]::NewGuid().ToString("N").Substring(0, 8)  # Taking first 8 char
 #---------------------------------------------- Searching for Office app -----------------------------------------------
 
 $stepName = "Searching for Office"
-Show-CustomProgressBar -CurrentStep 9 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 8 -TotalSteps $TotalSteps
 
 $office = ($appsList | Where-Object { ($_.DisplayName -like "*365*" -or $_.DisplayName -like "*Microsoft Office*") -and $_.Displayname -notlike "*Microsoft Teams*" } | Select-Object -ExpandProperty DisplayName) -replace '^Microsoft ', '' -replace ' -.*$', '' # $office take the app name found 
 
 #---------------------------------------------- Checking if current user is admin -----------------------------------------------
 $stepName = "Checking your role"
-Show-CustomProgressBar -CurrentStep 10 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 9 -TotalSteps $TotalSteps
 
 $administratorsGroupName = (New-Object Security.Principal.SecurityIdentifier("S-1-5-32-544")).Translate([Security.Principal.NTAccount]).Value # Identifying Administrator group by his SID (to prevent langage change)
 $administratorsGroupName = $administratorsGroupName.Split('\')[-1] # Cut it before the backslash
@@ -113,7 +107,7 @@ $userName = $systemInfo.UserName.Split('\')[-1] # Cutting current username befor
 
 #------------------------------------------------- Creating global tab --------------------------------------------------
 $stepName = "Generating tab"
-Show-CustomProgressBar -CurrentStep 11 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 10 -TotalSteps $TotalSteps
 
 $combinedData = [PSCustomObject]@{
     "Username"             = $userName
@@ -145,7 +139,6 @@ $combinedData = [PSCustomObject]@{
     "DNS"                  = ($networkConf | ForEach-Object { $_.DNSServerSearchOrder }) -join ', '
     "DHCP"                 = ($networkConf | ForEach-Object { if ($_.DHCPEnabled) { "Yes" } else { "No" } }) -join ', '
     "Office Version"       = if ($office) { $office } else { "No" }
-    "BitLocker encryption" = if ($encryptionStatus -match "Protection On") { "Yes" } else { "No" }
     "Initial install date" = ((Get-Date 01.01.1970) + ([System.TimeSpan]::fromseconds($initialInstallDate))).ToString("yyyy-MM-dd")
     "Scan date"            = $currentDate
     "Scan ID"              = $scanID
@@ -153,7 +146,7 @@ $combinedData = [PSCustomObject]@{
 
 #----------------------------------------------- Exporting all CSV files ------------------------------------------------
 $stepName = "Exporting files"
-Show-CustomProgressBar -CurrentStep 12 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 11 -TotalSteps $TotalSteps
 
 $fileName = "results"
 $fileName2 = $systemInfo.UserName.Split('\')[-1] + "-" + $scanID
