@@ -3,7 +3,7 @@
 |  _ \ _____      _____ _ __ / \  _   _  __| (_) |_ 
 | |_) / _ \ \ /\ / / _ \ '__/ _ \| | | |/ _` | | __|
 |  __/ (_) \ V  V /  __/ | / ___ \ |_| | (_| | | |_ 
-|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.6
+|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.6.1
 
 
 "@
@@ -86,6 +86,22 @@ Show-CustomProgressBar -CurrentStep 6 -TotalSteps $TotalSteps
 
 $printers = Get-CimInstance Win32_Printer | Where-Object { $_.Name -notlike '*OneNote*' -and $_.Name -notlike '*Microsoft*' } # Obtain all printers name except OneNote and Microsoft Printer
 
+#---------------------------------------------- Bitlocker encryption check -----------------------------------------------
+
+$isEncrypted = (New-Object -ComObject Shell.Application).NameSpace('C:').Self.ExtendedProperty('System.Volume.BitLockerProtection')
+
+if ($isEncrypted -eq 0) {
+    $isEncrypted = "Unencryptable"
+} elseif ($isEncrypted -eq 1) {
+    $isEncrypted = "Encrypted"
+} elseif ($isEncrypted -eq 2) {
+    $isEncrypted = "Not encrypted"
+} elseif ($isEncrypted -eq 3) {
+    $isEncrypted = "Encryption in progress"
+} else {
+    $isEncrypted = "Unknown"
+}
+
 #---------------------------------------------- Listing programs -----------------------------------------------
 $stepName = "Listing all programs"
 Show-CustomProgressBar -CurrentStep 7 -TotalSteps $TotalSteps
@@ -153,6 +169,7 @@ $combinedData = [PSCustomObject]@{
     "DNS"                  = ($networkConf | ForEach-Object { $_.DNSServerSearchOrder }) -join ', '
     "DHCP"                 = ($networkConf | ForEach-Object { if ($_.DHCPEnabled) { "Yes" } else { "No" } }) -join ', '
     "Printers"             = ($printers | ForEach-Object { $_.Name }) -join ', '
+    "Bitlocker encryption" = $isEncrypted
     "Office Version"       = if ($office) { $office } else { "No" }
     "Initial install date" = ((Get-Date 01.01.1970) + ([System.TimeSpan]::fromseconds($initialInstallDate))).ToString("yyyy-MM-dd")
     "Scan date"            = $currentDate
