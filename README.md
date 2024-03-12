@@ -19,7 +19,7 @@ As a modular script, you can see all unused functions in the [documentation](htt
 
 ## 📁 Ouput
 <pre>
-├── PowerAudit.ps1
+├── PowerAudit.(ps1/sh)
 └── output
     ├── result.(csv/json) - contain computer specific informations
     └── apps-list
