@@ -27,39 +27,6 @@ appFolderName="apps-list"
 outputFolderName="output"
 [ ! -d "$outputFolderName" ] && mkdir -p "$outputFolderName/$appFolderName"
 
-#---------------------------------------------- Hardware informations -----------------------------------------------
-stepName="Getting hardware informations"
-show_custom_progress_bar 2
-
-cpu_name=$(cat /proc/cpuinfo | grep "model name" | uniq | awk -F ": " '{print $2}')
-cpu_cores=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk -F ": " '{print $2}')
-cpu_max_freq=$(cat /proc/cpuinfo | grep "cpu MHz" | sort -n -r | head -n 1 | awk -F ": " '{print $2}')
-
-#---------------------------------------------- Disks informations -----------------------------------------------
-stepName="Getting disks informations"
-show_custom_progress_bar 3
-
-disks_info=$(hdparm -i /dev/sda)
-
-#---------------------------------------------- System informations -----------------------------------------------
-stepName="Getting system informations"
-show_custom_progress_bar 4
-
-osInfo=$(lsb_release -a)
-initialInstallDate=$(ls -ld --time-style=long-iso / | awk '{print $6}')
-
-#---------------------------------------------- Network informations -----------------------------------------------
-stepName="Getting network informations"
-show_custom_progress_bar 5
-
-networkConf=$(ip addr)
-#---------------------------------------------- Bitlocker encryption check -----------------------------------------------
-stepName="Encryption check"
-show_custom_progress_bar 6
-
-isEncrypted=$(lsblk -o NAME,FSTYPE | grep "crypto_LUKS" | cut -d ' ' -f 2)
-isEncrypted=${isEncrypted:-"Not encrypted"}
-
 #---------------------------------------------- Listing programs -----------------------------------------------
 stepName="Listing all programs"
 show_custom_progress_bar 7
@@ -75,17 +42,6 @@ for dir in "${dirs_in_path[@]}"; do
     done
 done
 
-#---------------------------------------------- Generating scan informations -----------------------------------------------
-stepName="Generating scan informations"
-show_custom_progress_bar 8
-
-currentDate=$(date +%F)
-scanID=$(head -c 8 /dev/urandom | od -An -tx1 | tr -d ' \n')
-
-#---------------------------------------------- Checking if current user is admin -----------------------------------------------
-stepName="Checking your role"
-show_custom_progress_bar 10
-
 #------------------------------------------------- Creating global tab --------------------------------------------------
 stepName="Generating tab"
 show_custom_progress_bar 11
@@ -99,62 +55,38 @@ manufacturer=$(dmidecode -s system-manufacturer)
 serialNumber=$(dmidecode -s system-serial-number)
 biosVersion=$(dmidecode -s bios-version)
 computerName=$(hostname)
-cpu=$(lscpu | grep "Model name" | cut -d':' -f2 | awk '{$1=$1}')
-numCores=$(lscpu | grep "Core(s) per socket" | cut -d':' -f2 | awk '{$1=$1}')
-frequency=$(lscpu | grep "CPU max MHz" | cut -d':' -f2 | awk '{$1=$1}')
+cpu=$(lscpu | awk '/Model name/ {print $3,$4,$5,$6,$7}')
+numCores=$(lscpu | grep "Core(s) per socket" | awk '{print $NF}')
+frequency=$(lscpu | grep "CPU max MHz" | awk '{print $NF}')
 gpu=$(lspci | grep VGA | cut -d':' -f3)
-gpuDriverVersion=$(glxinfo | grep "OpenGL version" | cut -d':' -f2 | awk '{$1=$1}')
-gpuDriverDate=$(glxinfo | grep "OpenGL version" | cut -d':' -f3 | awk '{$1=$1}')
-ramManufacturer=$(dmidecode -t memory | grep Manufacturer | awk '{print $2}' | head -1)
+ramManufacturer=$(sudo dmidecode -t memory | grep Manufacturer | awk '{print $2}' | head -1)
 totalRAM=$(free -h | awk '/Mem/{print $2}')
-ramSpeed=$(dmidecode -t memory | grep "Speed" | awk '{print $2}' | head -1)
-ramChannels=$(dmidecode -t memory | grep "Locator" | awk '{print $2}' | head -1)
-ramSlots=$(dmidecode -t memory | grep "Locator" | awk '{print $2}' | tail -1)
+ramSpeed=$(sudo dmidecode -t 17 | grep -i speed | grep -v "Configured" | awk '{print $2 " " $3}' | head -1)
+ramChannels=$(sudo dmidecode -t memory | grep "Locator" | awk '{print $2}' | head -1)
+ramSlots=$(sudo dmidecode -t memory | grep "Locator" | awk '{print $2}' | tail -1)
 totalDiskSpace=$(df -h --total | grep "total" | awk '{print $2}')
 totalFreeSpace=$(df -h --total | grep "total" | awk '{print $4}')
 diskType=$(lsblk -d -o NAME,TYPE | grep disk | awk '{print $2}')
-diskModel=$(lsblk -d -o NAME,MODEL | grep disk | awk '{print $2}')
-diskHealth=$(lsblk -d -o NAME,STATE | grep disk | awk '{print $2}')
+diskModel=$(cat /sys/class/block/sda/device/model )
 diskPartitions=$(lsblk -l | grep disk | awk '{print $6}')
-os=$(lsb_release -d | cut -f2)
+os=$(uname -a)
 version=$(lsb_release -r | cut -f2)
 architecture=$(uname -m)
 domain=$(dnsdomainname)
 ipAddress=$(hostname -I)
 gateway=$(ip route | grep default | awk '{print $3}')
 dns=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}')
-dhcp=$(cat /etc/network/interfaces | grep dhcp | awk '{print $1}')
-printers=$(lpstat -p | awk '{print $2}')
+dhcp=$(ip route show | grep "default via" | grep "dev eno1" | grep "proto dhcp" | awk '{print $5}')
+#printers=$(lpstat -p | awk '{print $2}')
 bitlockerEncryption=$(lsblk -o NAME,FSTYPE | grep crypt | wc -l)
 officeVersion="No"
 initialInstallDate=$(date -d @0)
 scanDate=$(date +"%Y-%m-%d")
 scanID="123456"
 
-#----------------------------------------------- Exporting all CSV files ------------------------------------------------
+#----------------------------------------------- Exporting all files ------------------------------------------------
 
-# Définition de la fonction csv
-csv()
-{
-    local items=("$@")
-
-    # quote and escape as needed
-    # https://datatracker.ietf.org/doc/html/rfc4180
-    for i in "${!items[@]}"
-    do
-        if [[ "${items[$i]}" =~ [,\"] ]]
-        then
-            items[$i]=\"$(echo -n "${items[$i]}" | sed 's/"/""/g')\"
-        fi
-    done
-
-    (
-    IFS=,
-    echo "${items[*]}"
-    )
-}
-
-stepName="Exporting files"
+stepName="Exporting all files"
 show_custom_progress_bar 12
 
 echo "Choose your output format"
@@ -163,14 +95,40 @@ echo "2: JSON"
 read -p "Choice: " choice
 
 if [ "$choice" -eq "1" ]; then
-    # Export to CSV format
+    # Assurez-vous que le dossier pour les CSV existe
+    
+    mkdir -p "$outputFolderName"
+    mkdir -p "$outputFolderName/$appFolderName"
+    
+    # Export to CSV format for applications list
     {
-    # Utilisation de la fonction csv pour écrire une ligne CSV
-    csv "$userName" "$isAdmin" "$model" "$manufacturer" "$serialNumber" "$biosVersion" "$computerName" "$cpu" "$numCores" "$frequency" "$gpu" "$gpuDriverVersion" "$gpuDriverDate" "$ramManufacturer" "$totalRAM" "$ramSpeed" "$ramChannels" "$ramSlots" "$totalDiskSpace" "$totalFreeSpace" "$diskType" "$diskModel" "$diskHealth" "$diskPartitions" "$os" "$version" "$architecture" "$domain" "$ipAddress" "$gateway" "$dns" "$dhcp" "$printers" "$bitlockerEncryption" "$officeVersion" "$initialInstallDate" "$scanDate" "$scanID"
-    } >"$outputFolderName/output.csv"
-    echo "CSV exported successfully."
+        echo "Application Name"
+        echo "$all_apps" | tr ' ' '\n'
+    } > "$outputFolderName/$appFolderName/apps-list.csv"
+    echo "CSV apps-list exported successfully."
+
+    # Export system information to CSV format
+    {
+        echo "Username,Administrator,Model,Manufacturer,S/N,BIOS Version,Computer name,CPU,Number of cores,Frequency,GPU,RAM manufacturer,Total RAM amount,RAM speed,RAM Channel,RAM Slot,Total disk space,Total free space,Disks type,Disks model,OS,Version,Architecture,Domain,IP Address,Gateway,DNS,DHCP,Printers,Bitlocker encryption,Office Version,Initial install date,Scan date,Scan ID"
+        echo "\"$userName\",\"$isAdmin\",\"$model\",\"$manufacturer\",\"$serialNumber\",\"$biosVersion\",\"$computerName\",\"$cpu\",\"$numCores\",\"$frequency\",\"$gpu\",\"$ramManufacturer\",\"$totalRAM\",\"$ramSpeed\",\"$ramChannels\",\"$ramSlots\",\"$totalDiskSpace\",\"$totalFreeSpace\",\"$diskType\",\"$diskModel\",\"$os\",\"$version\",\"$architecture\",\"$domain\",\"$ipAddress\",\"$gateway\",\"$dns\",\"$dhcp\",\"$printers\",\"$bitlockerEncryption\",\"$officeVersion\",\"$initialInstallDate\",\"$scanDate\",\"$scanID\""
+    } > "$outputFolderName/output.csv"
+    echo "CSV output exported successfully."
 elif [ "$choice" -eq "2" ]; then
-    # Export to JSON format
+    # Assurez-vous que le dossier pour les JSON existe
+    mkdir -p "$outputFolderName"
+    mkdir -p "$outputFolderName/$appFolderName"
+
+    # Export to JSON format for applications list
+    {
+        echo "{"
+        echo "  \"Applications\": ["
+        echo "$all_apps" | tr ' ' '\n' | awk '{print "    \""$0"\","}' | sed '$ s/,$//'
+        echo "  ]"
+        echo "}"
+    } > "$outputFolderName/$appFolderName/apps-list.json"
+    echo "JSON apps-list exported successfully."
+
+    # Export system information to JSON format
     {
         echo "{"
         echo "  \"Username\": \"$userName\","
@@ -213,7 +171,7 @@ elif [ "$choice" -eq "2" ]; then
         echo "  \"Scan ID\": \"$scanID\""
         echo "}"
     } >"$outputFolderName/output.json"
-    echo "JSON exported successfully."
+    echo "JSON output exported successfully."
 else
     echo "Not valid choice."
 fi
