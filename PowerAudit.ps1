@@ -3,28 +3,26 @@
 |  _ \ _____      _____ _ __ / \  _   _  __| (_) |_ 
 | |_) / _ \ \ /\ / / _ \ '__/ _ \| | | |/ _` | | __|
 |  __/ (_) \ V  V /  __/ | / ___ \ |_| | (_| | | |_ 
-|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.6.1
+|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.6.3
 
 
 "@
 
 #-------------------------------------------- Progress-bar definition ---------------------------------------------
 
-$TotalSteps = 12 
+$TotalSteps = 13 
 
 function Show-CustomProgressBar {
-    param (
+    param(
         [int]$CurrentStep,
-        [int]$TotalSteps
+        [int]$TotalSteps,
+        [string]$StepName
     )
-    
-    $ProgressWidth = 50 
-    $ProgressBar = [string]::Join('', ('o' * [math]::Round(($CurrentStep / $TotalSteps) * $ProgressWidth)))
-    
-    Write-Host -NoNewline "`r[$ProgressBar] $([math]::Round(($CurrentStep / $TotalSteps) * 12))/12 $stepName"
-
+    $ProgressWidth = 50
+    $Progress = "o" * ($CurrentStep * $ProgressWidth / $TotalSteps)
+    Write-Host "`r[$Progress".PadRight($ProgressWidth) "] $CurrentStep/13 $StepName           " -NoNewline
     if ($CurrentStep -eq $TotalSteps) {
-        Write-Host ""  
+        Write-Host ""
     }
 }
 
@@ -66,6 +64,8 @@ $diskInfo = Get-Disk | Where-Object { $_.DriveType -ne 'Removable' -and $_.Drive
 
 $totalSpace = Get-Volume | Where-Object { $_.DriveType -ne 'Removable' -and $_.DriveType -ne 'CD-ROM' -and $_.BusType -ne 'USB' }  # Get the total volume ingoring USB, Removable and CD-ROM devices
 
+$diskID = Get-CimInstance Win32_LogicalDisk | Where-Object { $_.ProviderName -notlike '*\\*'}| Select-Object DeviceID # Get the disk letter
+
 #---------------------------------------------- System informations -----------------------------------------------
 $stepName = "Getting system informations"
 Show-CustomProgressBar -CurrentStep 4 -TotalSteps $TotalSteps
@@ -87,30 +87,39 @@ Show-CustomProgressBar -CurrentStep 6 -TotalSteps $TotalSteps
 $printers = Get-CimInstance Win32_Printer | Where-Object { $_.Name -notlike '*OneNote*' -and $_.Name -notlike '*Microsoft*' } # Obtain all printers name except OneNote and Microsoft Printer
 
 #---------------------------------------------- Bitlocker encryption check -----------------------------------------------
+$stepName = "Checking bitlocker encryption"
+Show-CustomProgressBar -CurrentStep 7 -TotalSteps $TotalSteps
+function valueCompare ($isEncrypted) {
 
-$isEncrypted = (New-Object -ComObject Shell.Application).NameSpace('C:').Self.ExtendedProperty('System.Volume.BitLockerProtection')
+    if ($isEncrypted -eq 2) {
+        return "Not encrypted"
+    } elseif ($isEncrypted -eq 1) {
+        return "Encrypted"
+    } elseif ($isEncrypted -eq 3) {
+        return "Encryption in progress"
+    } elseif ($isEncrypted -eq 0) {
+        return "Unencryptable"
+    }
+    return "Unknown"
+}
 
-if ($isEncrypted -eq 0) {
-    $isEncrypted = "Unencryptable"
-} elseif ($isEncrypted -eq 1) {
-    $isEncrypted = "Encrypted"
-} elseif ($isEncrypted -eq 2) {
-    $isEncrypted = "Not encrypted"
-} elseif ($isEncrypted -eq 3) {
-    $isEncrypted = "Encryption in progress"
-} else {
-    $isEncrypted = "Unknown"
+$isEncrypted = @()
+
+foreach($letter in $diskID){
+    $getStatus = valueCompare(((New-Object -ComObject Shell.Application).NameSpace($letter.DeviceID).Self.ExtendedProperty('System.Volume.BitLockerProtection')))
+    $status = $letter.DeviceID + ' ' + $getStatus
+    $isEncrypted += $status
 }
 
 #---------------------------------------------- Listing programs -----------------------------------------------
 $stepName = "Listing all programs"
-Show-CustomProgressBar -CurrentStep 7 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 8 -TotalSteps $TotalSteps
 
 $appsList = Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*, HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*, HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* # Registery key
 
 #---------------------------------------------- Scan informations-----------------------------------------------
 $stepName = "Generating scan informations"
-Show-CustomProgressBar -CurrentStep 8 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 9 -TotalSteps $TotalSteps
 
 $currentDate = Get-Date -Format "yyyy-MM-dd" # Obtain the date
 $scanID = [Guid]::NewGuid().ToString("N").Substring(0, 8)  # Taking first 8 characters
@@ -118,13 +127,13 @@ $scanID = [Guid]::NewGuid().ToString("N").Substring(0, 8)  # Taking first 8 char
 #---------------------------------------------- Searching for Office app -----------------------------------------------
 
 $stepName = "Searching for Office"
-Show-CustomProgressBar -CurrentStep 9 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 10 -TotalSteps $TotalSteps
 
 $office = ($appsList | Where-Object { ($_.DisplayName -like "*365*" -or $_.DisplayName -like "*Microsoft Office*") -and $_.Displayname -notlike "*Microsoft Teams*" } | Select-Object -ExpandProperty DisplayName) -replace '^Microsoft ', '' -replace ' -.*$', '' # $office take the app name found 
 
 #---------------------------------------------- Checking if current user is admin -----------------------------------------------
 $stepName = "Checking your role"
-Show-CustomProgressBar -CurrentStep 10 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 11 -TotalSteps $TotalSteps
 
 $administratorsGroupName = (New-Object Security.Principal.SecurityIdentifier("S-1-5-32-544")).Translate([Security.Principal.NTAccount]).Value # Identifying Administrator group by his SID (to prevent langage change)
 $administratorsGroupName = $administratorsGroupName.Split('\')[-1] # Cut it before the backslash
@@ -133,7 +142,7 @@ $userName = $systemInfo.UserName.Split('\')[-1] # Cutting current username befor
 
 #------------------------------------------------- Creating global tab --------------------------------------------------
 $stepName = "Generating tab"
-Show-CustomProgressBar -CurrentStep 11 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 12 -TotalSteps $TotalSteps
 
 $combinedData = [PSCustomObject]@{
     "Username"             = $userName
@@ -169,7 +178,7 @@ $combinedData = [PSCustomObject]@{
     "DNS"                  = ($networkConf | ForEach-Object { $_.DNSServerSearchOrder }) -join ', '
     "DHCP"                 = ($networkConf | ForEach-Object { if ($_.DHCPEnabled) { "Yes" } else { "No" } }) -join ', '
     "Printers"             = ($printers | ForEach-Object { $_.Name }) -join ', '
-    "Bitlocker encryption" = $isEncrypted
+    "Bitlocker encryption" = (ForEach-Object {$isEncrypted}) -join ', '
     "Office Version"       = if ($office) { $office } else { "No" }
     "Initial install date" = ((Get-Date 01.01.1970) + ([System.TimeSpan]::fromseconds($initialInstallDate))).ToString("yyyy-MM-dd")
     "Scan date"            = $currentDate
@@ -178,24 +187,29 @@ $combinedData = [PSCustomObject]@{
 
 #----------------------------------------------- Exporting all CSV files ------------------------------------------------
 $stepName = "Exporting files"
-Show-CustomProgressBar -CurrentStep 12 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 13 -TotalSteps $TotalSteps
 
 $fileName = "results"
 $fileName2 = $systemInfo.UserName.Split('\')[-1] + "-" + $scanID
 
-Write-Host "Choose your output format"
-Write-Host "1: CSV"
-Write-Host "2: JSON"
-$choice = Read-Host "Choice: "
+function menu ($choice){
+    Write-Host "Choose your output format"
+    Write-Host "1: CSV"
+    Write-Host "2: JSON"
+    $choice = Read-Host "Choice: "  
 
-if ($choice -eq "1") {
-    $combinedData | Export-Csv -Path "$outputFolderName\$fileName.csv" -Delimiter ";" -Append -NoTypeinformation
-    $appsList | Select-Object DisplayName, DisplayVersion, Publisher | Where-Object { $_.DisplayName -ne $null } | Sort-Object DisplayName | Export-Csv -Path "$outputFolderName\$appFolderName\$fileName2.csv" -Delimiter ";" -Append -NoTypeinformation
+    if ($choice -eq 1) {
+        $combinedData | Export-Csv -Path "$outputFolderName\$fileName.csv" -Delimiter ";" -Append -NoTypeinformation
+        $appsList | Select-Object DisplayName, DisplayVersion, Publisher | Where-Object { $null -ne $_.DisplayName } | Sort-Object DisplayName | Export-Csv -Path "$outputFolderName\$appFolderName\$fileName2.csv" -Delimiter ";" -Append -NoTypeinformation
+    }
+    elseif ($choice -eq 2) {
+        $combinedData | ConvertTo-Json | out-File "$outputFolderName\$fileName.json"
+        $appsList | Select-Object DisplayName, DisplayVersion, Publisher | Where-Object { $null -ne $_.DisplayName } | Sort-Object DisplayName | ConvertTo-Json | Out-File  "$outputFolderName\$appFolderName\$fileName2.json"
+    }
+    else {
+        Write-Host "Not valid."
+        menu
+    }
 }
-elseif ($choice -eq "2") {
-    $combinedData | ConvertTo-Json | out-File "$outputFolderName\$fileName.json"
-    $appsList | Select-Object DisplayName, DisplayVersion, Publisher | Where-Object { $_.DisplayName -ne $null } | Sort-Object DisplayName | ConvertTo-Json | Out-File  "$outputFolderName\$appFolderName\$fileName2.json"
-}
-else {
-    Write-Host "Not valid."
-}
+
+menu

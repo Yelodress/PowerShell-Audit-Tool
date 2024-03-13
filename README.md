@@ -1,9 +1,9 @@
 <div align="center">
 <h1>PowerAudit</h1>
-<img alt="Static Badge" src="https://img.shields.io/badge/windows_version-8.1_%7C_10_%7C_11-green?style=for-the-badge&logo=windows&labelColor=%23313244&color=%2389dceb" style="margin-right: 10px">
-<img alt="Static Badge" src="https://img.shields.io/badge/Release-v0.6.1-green?style=for-the-badge&labelColor=%23313244&color=%23a6e3a1" style="margin-right: 10px">
+<a href="https://github.com/Yelodress/PowerShell-Audit-Tool/releases"><img alt="Static Badge" src="https://img.shields.io/badge/windows_version-8.1_%7C_10_%7C_11-green?style=for-the-badge&logo=windows&labelColor=%23313244&color=%2389dceb" style="margin-right: 10px"></a>
+<a href="https://github.com/Yelodress/PowerShell-Audit-Tool/releases"><img alt="Static Badge" src="https://img.shields.io/badge/Release-v0.6.3-green?style=for-the-badge&labelColor=%23313244&color=%23a6e3a1" style="margin-right: 10px"></a>
 <h3>
-an open source powershell script for retrieving Windows computers specifications and storing them in CSV files.
+An open source PowerShell script for retrieving Windows computers specifications and storing them in CSV files.
 </h3>
 </div>
 
@@ -30,7 +30,6 @@ As a modular script, you can see all unused functions in the [documentation](htt
 
 ## 🚧 Roadmap:
 - adding the ability to choose the folder's name (maybe in a textbox)
-- checking others disks for Bitlocker's encryption
 - Improve the progress-bar design
 
 
@@ -81,7 +80,7 @@ If you're facing issues with this script, tell me [here](https://github.com/Yelo
 - Installation date
 - Computer's hostname
 #### <img src="https://api.iconify.design/material-symbols:lock.svg?color=%23cdd6f4" height="15"  alt=""> Security
-- Bitlocker status
+- BitLocker encryption status
 ### Others
 #### <img src="https://api.iconify.design/mdi:printer.svg?color=%23cdd6f4" height="15"  alt=""> Peripherals
 - Printer(s) name(s)
