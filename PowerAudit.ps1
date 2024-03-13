@@ -3,7 +3,7 @@
 |  _ \ _____      _____ _ __ / \  _   _  __| (_) |_ 
 | |_) / _ \ \ /\ / / _ \ '__/ _ \| | | |/ _` | | __|
 |  __/ (_) \ V  V /  __/ | / ___ \ |_| | (_| | | |_ 
-|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.6.2
+|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.6.3
 
 
 "@
@@ -13,18 +13,16 @@
 $TotalSteps = 13 
 
 function Show-CustomProgressBar {
-    param (
+    param(
         [int]$CurrentStep,
-        [int]$TotalSteps
+        [int]$TotalSteps,
+        [string]$StepName
     )
-    
-    $ProgressWidth = 50 
-    $ProgressBar = [string]::Join('', ('o' * [math]::Round(($CurrentStep / $TotalSteps) * $ProgressWidth)))
-    
-    Write-Host -NoNewline "`r[$ProgressBar] $([math]::Round(($CurrentStep / $TotalSteps) * 13))/13 $stepName"
-
+    $ProgressWidth = 50
+    $Progress = "o" * ($CurrentStep * $ProgressWidth / $TotalSteps)
+    Write-Host "`r[$Progress".PadRight($ProgressWidth) "] $CurrentStep/13 $StepName           " -NoNewline
     if ($CurrentStep -eq $TotalSteps) {
-        Write-Host ""  
+        Write-Host ""
     }
 }
 
@@ -66,7 +64,7 @@ $diskInfo = Get-Disk | Where-Object { $_.DriveType -ne 'Removable' -and $_.Drive
 
 $totalSpace = Get-Volume | Where-Object { $_.DriveType -ne 'Removable' -and $_.DriveType -ne 'CD-ROM' -and $_.BusType -ne 'USB' }  # Get the total volume ingoring USB, Removable and CD-ROM devices
 
-$diskID =  Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID # Get the disk letter
+$diskID = Get-CimInstance Win32_LogicalDisk | Where-Object { $_.ProviderName -notlike '*\\*'}| Select-Object DeviceID # Get the disk letter
 
 #---------------------------------------------- System informations -----------------------------------------------
 $stepName = "Getting system informations"
