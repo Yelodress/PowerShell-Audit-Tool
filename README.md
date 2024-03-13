@@ -1,7 +1,8 @@
 <div align="center">
 <h1>PowerAudit</h1>
 <a href="https://github.com/Yelodress/PowerShell-Audit-Tool/releases"><img alt="Static Badge" src="https://img.shields.io/badge/windows_version-8.1_%7C_10_%7C_11-green?style=for-the-badge&logo=windows&labelColor=%23313244&color=%2389dceb" style="margin-right: 10px"></a>
-<a href="https://github.com/Yelodress/PowerShell-Audit-Tool/releases"><img alt="Static Badge" src="https://img.shields.io/badge/Release-v0.6.3-green?style=for-the-badge&labelColor=%23313244&color=%23a6e3a1" style="margin-right: 10px"></a>
+<a href="https://github.com/Yelodress/PowerShell-Audit-Tool/releases"><img alt="Static Badge" src="https://img.shields.io/badge/Release-v0.6.2-green?style=for-the-badge&labelColor=%23313244&color=%23a6e3a1" style="margin-right: 10px"></a>
+<a href="https://github.com/Yelodress/PowerShell-Audit-Tool/releases"><img alt="Static Badge" src="https://img.shields.io/badge/ANY-FCCC624?style=for-the-badge&logo=Linux&label=Linux%20Version&labelColor=%23313244&color=b0422f"></a>
 <h3>
 An open source PowerShell script for retrieving Windows computers specifications and storing them in CSV files.
 </h3>
@@ -13,13 +14,14 @@ An open source PowerShell script for retrieving Windows computers specifications
 - 👍 Really Simple - one single script
 - 🔧 Modular
 - 🍃 Lightweight
+- Linux Support
 
 ## 📓 Documentation
 As a modular script, you can see all unused functions in the [documentation](https://github.com/Yelodress/PowerShell-Audit-Tool/wiki/Documentation).
 
 ## 📁 Ouput
 <pre>
-├── PowerAudit.(ps1/sh)
+├── PowerAudit.ps1
 └── output
     ├── result.(csv/json) - contain computer specific informations
     └── apps-list
