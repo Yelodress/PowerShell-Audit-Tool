@@ -1,7 +1,9 @@
 <div align="center">
 <h1>PowerAudit</h1>
 <a href="https://github.com/Yelodress/PowerShell-Audit-Tool/releases"><img alt="Static Badge" src="https://img.shields.io/badge/windows_version-8.1_%7C_10_%7C_11-green?style=for-the-badge&logo=windows&labelColor=%23313244&color=%2389dceb" style="margin-right: 10px"></a>
-<a href="https://github.com/Yelodress/PowerShell-Audit-Tool/releases"><img alt="Static Badge" src="https://img.shields.io/badge/Release-v0.6.3-green?style=for-the-badge&labelColor=%23313244&color=%23a6e3a1" style="margin-right: 10px"></a>
+<a href="https://github.com/Yelodress/PowerShell-Audit-Tool/releases"><img alt="Static Badge" src="https://img.shields.io/badge/Any-%23f5a97f?style=for-the-badge&logo=linux&logoColor=white&label=Linux%20version&labelColor=%23313244&color=%23c6a0f6"></a>
+<a href="https://github.com/Yelodress/PowerShell-Audit-Tool/releases"><img alt="Static Badge" src="https://img.shields.io/badge/Release-v0.6.3-green?style=for-the-badge&labelColor=%23313244&color=%23a6e3a1" style="margin-right: 10px"> 
+</a>
 <h3>
 An open source PowerShell script for retrieving Windows computers specifications and storing them in CSV files.
 </h3>
@@ -13,6 +15,7 @@ An open source PowerShell script for retrieving Windows computers specifications
 - 👍 Really Simple - one single script
 - 🔧 Modular
 - 🍃 Lightweight
+- ❤️ Multi OS support
 
 ## 📓 Documentation
 As a modular script, you can see all unused functions in the [documentation](https://github.com/Yelodress/PowerShell-Audit-Tool/wiki/Documentation).
