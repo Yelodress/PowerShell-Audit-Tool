@@ -8,170 +8,134 @@ echo "
 |_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.6.1 pre-release
 "
 
-#-------------------------------------------- Progress-bar definition ---------------------------------------------
+# Progress-bar definition
 total_steps=12
 
-function show_custom_progress_bar {
-    current_step=$1
-    progress_width=50
-    progress_bar=$(printf "%0.s-" $(seq 1 $((current_step * progress_width / total_steps))))
-    printf "\r[%-${progress_width}s] %d/12 %s" "$progress_bar" "$current_step" "$stepName"
-    [ "$current_step" -eq "$total_steps" ] && echo ""
+show_custom_progress_bar() {
+    local current_step=$1
+    local progress_width=50
+    local filled=$((current_step * progress_width / total_steps))
+    local empty=$((progress_width - filled))
+    printf "\r[%-${progress_width}s] %d/12 %s" "${progress_bar:0:$filled}" "$current_step" "$stepName"
+    [[ "$current_step" -eq "$total_steps" ]] && echo ""
 }
 
-#----------------------------------------------- Folder creation ------------------------------------------------
-stepName="Creating folders"
-show_custom_progress_bar 1
+# Folder creation
+prepare_folders() {
+    local outputFolderName="output"
+    local appFolderName="apps-list"
+    mkdir -p "$outputFolderName/$appFolderName"
+}
 
-appFolderName="apps-list"
-outputFolderName="output"
-[ ! -d "$outputFolderName" ] && mkdir -p "$outputFolderName/$appFolderName"
-
-#---------------------------------------------- Listing programs -----------------------------------------------
-stepName="Listing all programs"
-show_custom_progress_bar 7
-
-IFS=':' read -ra dirs_in_path <<< "$PATH"
-all_apps=""
-
-for dir in "${dirs_in_path[@]}"; do
-    for file in "$dir"/*; do
-        if [[ -x $file && -f $file ]]; then
-            all_apps="$all_apps $(basename "$file")"
-        fi
+# List programs
+list_programs() {
+    IFS=':' read -ra dirs_in_path <<< "$PATH"
+    for dir in "${dirs_in_path[@]}"; do
+        for file in "$dir"/*; do
+            [[ -x $file && -f $file ]] && all_apps+=" $(basename "$file")"
+        done
     done
-done
+}
 
-#------------------------------------------------- Creating global tab --------------------------------------------------
-stepName="Generating tab"
-show_custom_progress_bar 11
+gather_basic_system_info() {
+    global_username=$(whoami)
+    global_is_admin=$(id -u)
+    [ "$global_is_admin" -eq 0 ] && global_is_admin="Yes" || global_is_admin="No"
+    global_model=$(dmidecode -s system-product-name)
+    global_manufacturer=$(dmidecode -s system-manufacturer)
+    global_serial_number=$(dmidecode -s system-serial-number)
+    global_bios_version=$(dmidecode -s bios-version)
+    global_computer_name=$(hostname)
+}
 
-userName=$(whoami)
-isAdmin=$(id -u)
-[ "$isAdmin" -eq 0 ] && isAdmin="Yes" || isAdmin="No"
 
-model=$(dmidecode -s system-product-name)
-manufacturer=$(dmidecode -s system-manufacturer)
-serialNumber=$(dmidecode -s system-serial-number)
-biosVersion=$(dmidecode -s bios-version)
-computerName=$(hostname)
-cpu=$(lscpu | awk '/Model name/ {print $3,$4,$5,$6,$7}')
-numCores=$(lscpu | grep "Core(s) per socket" | awk '{print $NF}')
-frequency=$(lscpu | grep "CPU max MHz" | awk '{print $NF}')
-gpu=$(lspci | grep VGA | cut -d':' -f3)
-ramManufacturer=$(sudo dmidecode -t memory | grep Manufacturer | awk '{print $2}' | head -1)
-totalRAM=$(free -h | awk '/Mem/{print $2}')
-ramSpeed=$(sudo dmidecode -t 17 | grep -i speed | grep -v "Configured" | awk '{print $2 " " $3}' | head -1)
-ramChannels=$(sudo dmidecode -t memory | grep "Locator" | awk '{print $2}' | head -1)
-ramSlots=$(sudo dmidecode -t memory | grep "Locator" | awk '{print $2}' | tail -1)
-totalDiskSpace=$(df -h --total | grep "total" | awk '{print $2}')
-totalFreeSpace=$(df -h --total | grep "total" | awk '{print $4}')
-diskType=$(lsblk -d -o NAME,TYPE | grep disk | awk '{print $2}')
-diskModel=$(cat /sys/class/block/sda/device/model )
-diskPartitions=$(lsblk -l | grep disk | awk '{print $6}')
-os=$(uname -a)
-version=$(lsb_release -r | cut -f2)
-architecture=$(uname -m)
-domain=$(dnsdomainname)
-ipAddress=$(hostname -I)
-gateway=$(ip route | grep default | awk '{print $3}')
-dns=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}')
-dhcp=$(ip route show | grep "default via" | grep "dev eno1" | grep "proto dhcp" | awk '{print $5}')
-#printers=$(lpstat -p | awk '{print $2}')
-bitlockerEncryption=$(lsblk -o NAME,FSTYPE | grep crypt | wc -l)
-officeVersion="No"
-initialInstallDate=$(date -d @0)
-scanDate=$(date +"%Y-%m-%d")
-scanID="123456"
+gather_cpu_info() {
+    global_cpu_model=$(lscpu | awk -F: '/Model name/{print $2}' | sed 's/^[ \t]*//;s/[ \t]*$//')
+    global_cpu_cores=$(lscpu | awk -F: '/^Core\(s\) per socket/{print $2}' | xargs)
+    global_cpu_threads_per_core=$(lscpu | awk -F: '/^Thread\(s\) per core/{print $2}' | xargs)
+    global_cpu_max_speed=$(lscpu | awk -F: '/CPU max MHz/{print $2}' | xargs)
+    global_cpu_min_speed=$(lscpu | awk -F: '/CPU min MHz/{print $2}' | xargs)
+    global_cpu_architecture=$(lscpu | awk -F: '/Architecture/{print $2}' | xargs)
+}
 
-#----------------------------------------------- Exporting all files ------------------------------------------------
-
-stepName="Exporting all files"
-show_custom_progress_bar 12
-
-echo "Choose your output format"
-echo "1: CSV"
-echo "2: JSON"
-read -p "Choice: " choice
-
-if [ "$choice" -eq "1" ]; then
-    # Assurez-vous que le dossier pour les CSV existe
+gather_gpu_info() {
+    # Récupération du modèle du GPU
+    global_gpu=$(lspci | grep VGA | cut -d':' -f3 | sed 's/^ //')
     
-    mkdir -p "$outputFolderName"
-    mkdir -p "$outputFolderName/$appFolderName"
+    # Placeholder pour la version du pilote et la date du pilote
+    # NOTE: Ces informations nécessitent des commandes spécifiques au fabricant ou au gestionnaire de pilotes
+        if command -v glxinfo &> /dev/null; then
+        global_gpu_driver_version=$(glxinfo | grep "OpenGL version" | sed 's/^.*: //')
+    else
+        global_gpu_driver_version="glxinfo not installed"
+    fi
+    global_gpu_driver_date="To be implemented"
     
-    # Export to CSV format for applications list
-    {
-        echo "Application Name"
-        echo "$all_apps" | tr ' ' '\n'
-    } > "$outputFolderName/$appFolderName/apps-list.csv"
-    echo "CSV apps-list exported successfully."
+    # Exemple pour un GPU NVIDIA (commenté car nécessite une implémentation spécifique)
+    # Si vous avez un GPU NVIDIA, vous pouvez décommenter et ajuster ce qui suit
+    # global_gpu_driver_version=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader)
+    # global_gpu_driver_date="To be determined"
 
-    # Export system information to CSV format
-    {
-        echo "Username,Administrator,Model,Manufacturer,S/N,BIOS Version,Computer name,CPU,Number of cores,Frequency,GPU,RAM manufacturer,Total RAM amount,RAM speed,RAM Channel,RAM Slot,Total disk space,Total free space,Disks type,Disks model,OS,Version,Architecture,Domain,IP Address,Gateway,DNS,DHCP,Printers,Bitlocker encryption,Office Version,Initial install date,Scan date,Scan ID"
-        echo "\"$userName\",\"$isAdmin\",\"$model\",\"$manufacturer\",\"$serialNumber\",\"$biosVersion\",\"$computerName\",\"$cpu\",\"$numCores\",\"$frequency\",\"$gpu\",\"$ramManufacturer\",\"$totalRAM\",\"$ramSpeed\",\"$ramChannels\",\"$ramSlots\",\"$totalDiskSpace\",\"$totalFreeSpace\",\"$diskType\",\"$diskModel\",\"$os\",\"$version\",\"$architecture\",\"$domain\",\"$ipAddress\",\"$gateway\",\"$dns\",\"$dhcp\",\"$printers\",\"$bitlockerEncryption\",\"$officeVersion\",\"$initialInstallDate\",\"$scanDate\",\"$scanID\""
-    } > "$outputFolderName/output.csv"
-    echo "CSV output exported successfully."
-elif [ "$choice" -eq "2" ]; then
-    # Assurez-vous que le dossier pour les JSON existe
-    mkdir -p "$outputFolderName"
-    mkdir -p "$outputFolderName/$appFolderName"
+    # Pour les GPUs AMD et Intel, il pourrait être nécessaire de consulter des fichiers spécifiques
+    # ou d'utiliser des commandes comme `glxinfo` pour obtenir la version du pilote OpenGL comme proxy
+}
 
-    # Export to JSON format for applications list
-    {
-        echo "{"
-        echo "  \"Applications\": ["
-        echo "$all_apps" | tr ' ' '\n' | awk '{print "    \""$0"\","}' | sed '$ s/,$//'
-        echo "  ]"
-        echo "}"
-    } > "$outputFolderName/$appFolderName/apps-list.json"
-    echo "JSON apps-list exported successfully."
+# System info gathering
+gather_system_info() {
+    gather_basic_system_info
+    gather_cpu_info
+    gather_gpu_info
+}
 
-    # Export system information to JSON format
-    {
-        echo "{"
-        echo "  \"Username\": \"$userName\","
-        echo "  \"Administrator\": \"$isAdmin\","
-        echo "  \"Model\": \"$model\","
-        echo "  \"Manufacturer\": \"$manufacturer\","
-        echo "  \"S/N\": \"$serialNumber\","
-        echo "  \"BIOS Version\": \"$biosVersion\","
-        echo "  \"Computer name\": \"$computerName\","
-        echo "  \"CPU\": \"$cpu\","
-        echo "  \"Number of cores\": \"$numCores\","
-        echo "  \"Frequency\": \"$frequency MHz\","
-        echo "  \"GPU\": \"$gpu\","
-        echo "  \"GPU driver version\": \"$gpuDriverVersion\","
-        echo "  \"GPU Driver date\": \"$gpuDriverDate\","
-        echo "  \"RAM manufacturer\": \"$ramManufacturer\","
-        echo "  \"Total RAM amount\": \"$totalRAM\","
-        echo "  \"RAM speed\": \"$ramSpeed MHz\","
-        echo "  \"RAM Channel\": \"$ramChannels\","
-        echo "  \"RAM Slot\": \"$ramSlots\","
-        echo "  \"Total disk space\": \"$totalDiskSpace\","
-        echo "  \"Total free space\": \"$totalFreeSpace\","
-        echo "  \"Disks type\": \"$diskType\","
-        echo "  \"Disks model\": \"$diskModel\","
-        echo "  \"Disks health\": \"$diskHealth\","
-        echo "  \"Disks partitions\": \"$diskPartitions\","
-        echo "  \"OS\": \"$os\","
-        echo "  \"Version\": \"$version\","
-        echo "  \"Architecture\": \"$architecture\","
-        echo "  \"Domain\": \"$domain\","
-        echo "  \"IP Address\": \"$ipAddress\","
-        echo "  \"Gateway\": \"$gateway\","
-        echo "  \"DNS\": \"$dns\","
-        echo "  \"DHCP\": \"$dhcp\","
-        echo "  \"Printers\": \"$printers\","
-        echo "  \"Bitlocker encryption\": \"$bitlockerEncryption\","
-        echo "  \"Office Version\": \"$officeVersion\","
-        echo "  \"Initial install date\": \"$initialInstallDate\","
-        echo "  \"Scan date\": \"$scanDate\","
-        echo "  \"Scan ID\": \"$scanID\""
-        echo "}"
-    } >"$outputFolderName/output.json"
-    echo "JSON output exported successfully."
-else
-    echo "Not valid choice."
-fi
+# Exporting files
+export_files() {
+    case $choice in
+        1) export_to_csv ;;
+        2) export_to_json ;;
+        *) echo "Invalid choice." ;;
+    esac
+}
+
+export_to_csv() {
+    local csv_file="$outputFolderName/system_info.csv"
+    echo "Username,Administrator,Model,Manufacturer,S/N,BIOS Version,Computer name,CPU Model,CPU Cores,CPU Threads per Core,CPU Max Speed,CPU Min Speed,CPU Architecture,GPU,GPU Driver Version,GPU Driver Date" > "$csv_file"
+    echo "\"$global_username\",\"$global_is_admin\",\"$global_model\",\"$global_manufacturer\",\"$global_serial_number\",\"$global_bios_version\",\"$global_computer_name\",\"$global_cpu_model\",\"$global_cpu_cores\",\"$global_cpu_threads_per_core\",\"$global_cpu_max_speed\",\"$global_cpu_min_speed\",\"$global_cpu_architecture\",\"$global_gpu\",\"$global_gpu_driver_version\",\"$global_gpu_driver_date\"" >> "$csv_file"
+}
+
+
+export_to_json() {
+    local json_file="$outputFolderName/system_info.json"
+    cat << EOF > "$json_file"
+{
+  "Username": "$global_username",
+  "Administrator": "$global_is_admin",
+  "Model": "$global_model",
+  "Manufacturer": "$global_manufacturer",
+  "S/N": "$global_serial_number",
+  "BIOS Version": "$global_bios_version",
+  "Computer name": "$global_computer_name",
+  "CPU Model": "$global_cpu_model",
+  "CPU Cores": "$global_cpu_cores",
+  "CPU Threads per Core": "$global_cpu_threads_per_core",
+  "CPU Max Speed": "$global_cpu_max_speed",
+  "CPU Min Speed": "$global_cpu_min_speed",
+  "CPU Architecture": "$global_cpu_architecture",
+  "GPU": "$global_gpu",
+  "GPU Driver Version": "$global_gpu_driver_version",
+  "GPU Driver Date": "$global_gpu_driver_date"
+}
+EOF
+}
+
+# Main execution flow
+main() {
+    prepare_folders
+    list_programs
+    gather_system_info
+    echo "Choose your output format: [1] CSV, [2] JSON"
+    read -p "Choice: " choice
+    [[ ! $choice =~ ^[1-2]$ ]] && { echo "Invalid choice."; exit 1; }
+    export_files
+}
+
+main
