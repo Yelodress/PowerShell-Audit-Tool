@@ -180,6 +180,27 @@ gather_network_info() {
     fi
 }
 
+gather_misc_info() {
+    # Date et heure du scan
+    global_scan_date=$(date "+%Y-%m-%d %H:%M:%S")
+    
+    # Générer un ID de scan simple basé sur la date/heure actuelle
+    global_scan_id=$(date "+%Y%m%d%H%M%S")
+    
+    # Récupérer les informations des imprimantes (CUPS doit être installé)
+    global_printers=$(lpstat -a 2>/dev/null | awk '{print $1}' | xargs)
+    if [ -z "$global_printers" ]; then
+        global_printers="No printers found or CUPS not installed"
+    fi
+    
+    # BitLocker Encryption, Office Version ne sont pas applicables sous Linux
+    global_bitlocker_encryption="Not applicable on Linux"
+    global_office_version="Not applicable on Linux"
+    
+    # Date d'installation initiale de l'OS (approche basée sur la date de création du système de fichiers root)
+    # Cette commande peut nécessiter des droits d'administration et n'est pas infaillible
+    global_initial_install_date=$(sudo tune2fs -l /dev/sda2 | grep 'Filesystem created:' | cut -d':' -f2)
+}
 
 # System info gathering
 gather_system_info() {
@@ -189,6 +210,7 @@ gather_system_info() {
     gather_ram_info
     gather_disk_info
     gather_network_info
+    gather_misc_info
 }
 
 # Exporting files
@@ -203,11 +225,11 @@ export_files() {
 export_to_csv() {
     local csv_file="$outputFolderName/system_info.csv"
     
-    # Ajout des en-têtes CSV pour les informations réseau
-    echo "Username,Administrator,Model,Manufacturer,S/N,BIOS Version,Computer name,CPU Model,CPU Cores,CPU Threads per Core,CPU Max Speed,CPU Min Speed,CPU Architecture,GPU,GPU Driver Version,GPU Driver Date,RAM Manufacturer,Total RAM Amount,RAM Speed,RAM Slot,RAM Channel,Disks Type,Disks Model,Disks Health,Disks Partitions,Domain,IP Address,Gateway,DNS,DHCP" > "$csv_file"
+    # Ajout des en-têtes CSV pour les nouvelles informations
+    echo "Username,Administrator,Model,Manufacturer,S/N,BIOS Version,Computer name,CPU Model,CPU Cores,CPU Threads per Core,CPU Max Speed,CPU Min Speed,CPU Architecture,GPU,GPU Driver Version,GPU Driver Date,RAM Manufacturer,Total RAM Amount,RAM Speed,RAM Slot,RAM Channel,Disks Type,Disks Model,Disks Health,Disks Partitions,Domain,IP Address,Gateway,DNS,DHCP,Printers,BitLocker Encryption,Office Version,Initial Install Date,Scan Date,Scan ID" > "$csv_file"
     
-    # Ajout des informations réseau aux données à exporter
-    echo "\"$global_username\",\"$global_is_admin\",\"$global_model\",\"$global_manufacturer\",\"$global_serial_number\",\"$global_bios_version\",\"$global_computer_name\",\"$global_cpu_model\",\"$global_cpu_cores\",\"$global_cpu_threads_per_core\",\"$global_cpu_max_speed\",\"$global_cpu_min_speed\",\"$global_cpu_architecture\",\"$global_gpu\",\"$global_gpu_driver_version\",\"$global_gpu_driver_date\",\"$global_ram_manufacturer\",\"$global_total_ram_amount\",\"$global_ram_speed\",\"$global_ram_slot\",\"$global_ram_channel\",\"$global_disks_type\",\"$global_disks_model\",\"$global_disks_health\",\"$global_disks_partitions\",\"$global_domain\",\"$global_ipaddress\",\"$global_gateway\",\"$global_dns\",\"$global_dhcp\"" >> "$csv_file"
+    # Ajout des nouvelles informations aux données à exporter
+    echo "\"$global_username\",\"$global_is_admin\",\"$global_model\",\"$global_manufacturer\",\"$global_serial_number\",\"$global_bios_version\",\"$global_computer_name\",\"$global_cpu_model\",\"$global_cpu_cores\",\"$global_cpu_threads_per_core\",\"$global_cpu_max_speed\",\"$global_cpu_min_speed\",\"$global_cpu_architecture\",\"$global_gpu\",\"$global_gpu_driver_version\",\"$global_gpu_driver_date\",\"$global_ram_manufacturer\",\"$global_total_ram_amount\",\"$global_ram_speed\",\"$global_ram_slot\",\"$global_ram_channel\",\"$global_disks_type\",\"$global_disks_model\",\"$global_disks_health\",\"$global_disks_partitions\",\"$global_domain\",\"$global_ipaddress\",\"$global_gateway\",\"$global_dns\",\"$global_dhcp\",\"$global_printers\",\"$global_bitlocker_encryption\",\"$global_office_version\",\"$global_initial_install_date\",\"$global_scan_date\",\"$global_scan_id\"" >> "$csv_file"
 }
 
 export_to_json() {
@@ -244,7 +266,13 @@ export_to_json() {
   "IP Address": "$global_ipaddress",
   "Gateway": "$global_gateway",
   "DNS": "$global_dns",
-  "DHCP": "$global_dhcp"
+  "DHCP": "$global_dhcp",
+  "Printers": "$global_printers",
+  "BitLocker Encryption": "$global_bitlocker_encryption",
+  "Office Version": "$global_office_version",
+  "Initial Install Date": "$global_initial_install_date",
+  "Scan Date": "$global_scan_date",
+  "Scan ID": "$global_scan_id"
 }
 EOF
 }
