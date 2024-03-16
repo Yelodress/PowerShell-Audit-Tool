@@ -1,5 +1,22 @@
 #!/bin/bash
 
+original_lang=$LANG
+original_lc_all=$LC_ALL
+
+if ! locale -a | grep -q 'en_US.utf8\|en_US.UTF-8'; then
+    echo "Locale en_US.UTF-8 non disponible. Tentative d'activation..."
+
+    # Décommente la ligne pour la locale en_US.UTF-8 (utilise sudo si nécessaire)
+    sudo sed -i '/# en_US.UTF-8 UTF-8/s/^# //' /etc/locale.gen
+    
+    # Exécute locale-gen pour générer la locale (utilise sudo si nécessaire)
+    sudo locale-gen
+
+    echo "Locale en_US.UTF-8 activée et générée."
+else
+    echo "Locale en_US.UTF-8 déjà disponible."
+fi
+
 echo "
  ____                         _             _ _ _   
 |  _ \ _____      _____ _ __ / \  _   _  __| (_) |_ 
@@ -138,6 +155,9 @@ main() {
     read -p "Choice: " choice
     [[ ! $choice =~ ^[1-2]$ ]] && { echo "Invalid choice."; exit 1; }
     export_files
+
+    export LANG=$original_lang
+    export LC_ALL=$original_lc_all
 }
 
 main
