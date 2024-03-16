@@ -22,8 +22,8 @@ show_custom_progress_bar() {
 
 # Folder creation
 prepare_folders() {
-    local outputFolderName="output"
-    local appFolderName="apps-list"
+    outputFolderName="output"
+    appFolderName="apps-list"
     mkdir -p "$outputFolderName/$appFolderName"
 }
 
@@ -97,7 +97,9 @@ export_files() {
 }
 
 export_to_csv() {
+    echo $outputFolderName
     local csv_file="$outputFolderName/system_info.csv"
+    echo $csv_file
     echo "Username,Administrator,Model,Manufacturer,S/N,BIOS Version,Computer name,CPU Model,CPU Cores,CPU Threads per Core,CPU Max Speed,CPU Min Speed,CPU Architecture,GPU,GPU Driver Version,GPU Driver Date" > "$csv_file"
     echo "\"$global_username\",\"$global_is_admin\",\"$global_model\",\"$global_manufacturer\",\"$global_serial_number\",\"$global_bios_version\",\"$global_computer_name\",\"$global_cpu_model\",\"$global_cpu_cores\",\"$global_cpu_threads_per_core\",\"$global_cpu_max_speed\",\"$global_cpu_min_speed\",\"$global_cpu_architecture\",\"$global_gpu\",\"$global_gpu_driver_version\",\"$global_gpu_driver_date\"" >> "$csv_file"
 }
