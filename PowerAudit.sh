@@ -151,6 +151,36 @@ gather_disk_info() {
     global_disks_partitions=$(lsblk -o NAME,TYPE | grep part | awk '{print $1}' | xargs)
 }
 
+gather_network_info() {
+    # Domaine
+    global_domain=$(hostname -d)
+    if [ -z "$global_domain" ]; then
+        global_domain="Not set or not applicable"
+    fi
+    
+    # Adresse IP (l'interface principale utilisée pour la passerelle par défaut est un bon candidat)
+    global_ipaddress=$(ip route get 1.1.1.1 | grep -oP 'src \K\S+')
+    
+    # Passerelle
+    global_gateway=$(ip route | grep default | awk '{print $3}')
+    
+    # Serveur DNS (peut varier selon la configuration, ici on regarde resolv.conf comme exemple)
+    global_dns=$(grep "nameserver" /etc/resolv.conf | awk '{print $2}' | xargs)
+    
+    # DHCP (utilise nmcli si disponible, sinon indique une vérification manuelle)
+    if command -v nmcli >/dev/null 2>&1; then
+        # Ceci suppose que vous avez une connexion nommée "System eth0" ou similaire.
+        # Vous devrez peut-être ajuster selon le nom de votre connexion réseau.
+        global_dhcp=$(nmcli -t -f IP4.DHCP4.OPTIONS device show | grep 'dhcp_lease_time' | cut -d':' -f2 | xargs)
+        if [ -z "$global_dhcp" ]; then
+            global_dhcp="Not set or not applicable"
+        fi
+    else
+        global_dhcp="nmcli not installed or DHCP info not available"
+    fi
+}
+
+
 # System info gathering
 gather_system_info() {
     gather_basic_system_info
@@ -158,6 +188,7 @@ gather_system_info() {
     gather_gpu_info
     gather_ram_info
     gather_disk_info
+    gather_network_info
 }
 
 # Exporting files
@@ -172,15 +203,12 @@ export_files() {
 export_to_csv() {
     local csv_file="$outputFolderName/system_info.csv"
     
-    # Extension des en-têtes CSV avec les informations sur les disques
-    echo "Username,Administrator,Model,Manufacturer,S/N,BIOS Version,Computer name,CPU Model,CPU Cores,CPU Threads per Core,CPU Max Speed,CPU Min Speed,CPU Architecture,GPU,GPU Driver Version,GPU Driver Date,RAM Manufacturer,Total RAM Amount,RAM Speed,RAM Slot,RAM Channel,Disks Type,Disks Model,Disks Health,Disks Partitions" > "$csv_file"
+    # Ajout des en-têtes CSV pour les informations réseau
+    echo "Username,Administrator,Model,Manufacturer,S/N,BIOS Version,Computer name,CPU Model,CPU Cores,CPU Threads per Core,CPU Max Speed,CPU Min Speed,CPU Architecture,GPU,GPU Driver Version,GPU Driver Date,RAM Manufacturer,Total RAM Amount,RAM Speed,RAM Slot,RAM Channel,Disks Type,Disks Model,Disks Health,Disks Partitions,Domain,IP Address,Gateway,DNS,DHCP" > "$csv_file"
     
-    # Ajout des informations sur les disques aux données à exporter
-    echo "\"$global_username\",\"$global_is_admin\",\"$global_model\",\"$global_manufacturer\",\"$global_serial_number\",\"$global_bios_version\",\"$global_computer_name\",\"$global_cpu_model\",\"$global_cpu_cores\",\"$global_cpu_threads_per_core\",\"$global_cpu_max_speed\",\"$global_cpu_min_speed\",\"$global_cpu_architecture\",\"$global_gpu\",\"$global_gpu_driver_version\",\"$global_gpu_driver_date\",\"$global_ram_manufacturer\",\"$global_total_ram_amount\",\"$global_ram_speed\",\"$global_ram_slot\",\"$global_ram_channel\",\"$global_disks_type\",\"$global_disks_model\",\"$global_disks_health\",\"$global_disks_partitions\"" >> "$csv_file"
+    # Ajout des informations réseau aux données à exporter
+    echo "\"$global_username\",\"$global_is_admin\",\"$global_model\",\"$global_manufacturer\",\"$global_serial_number\",\"$global_bios_version\",\"$global_computer_name\",\"$global_cpu_model\",\"$global_cpu_cores\",\"$global_cpu_threads_per_core\",\"$global_cpu_max_speed\",\"$global_cpu_min_speed\",\"$global_cpu_architecture\",\"$global_gpu\",\"$global_gpu_driver_version\",\"$global_gpu_driver_date\",\"$global_ram_manufacturer\",\"$global_total_ram_amount\",\"$global_ram_speed\",\"$global_ram_slot\",\"$global_ram_channel\",\"$global_disks_type\",\"$global_disks_model\",\"$global_disks_health\",\"$global_disks_partitions\",\"$global_domain\",\"$global_ipaddress\",\"$global_gateway\",\"$global_dns\",\"$global_dhcp\"" >> "$csv_file"
 }
-
-
-
 
 export_to_json() {
     local json_file="$outputFolderName/system_info.json"
@@ -211,12 +239,15 @@ export_to_json() {
   "Disks Type": "$global_disks_type",
   "Disks Model": "$global_disks_model",
   "Disks Health": "$global_disks_health",
-  "Disks Partitions": "$global_disks_partitions"
+  "Disks Partitions": "$global_disks_partitions",
+  "Domain": "$global_domain",
+  "IP Address": "$global_ipaddress",
+  "Gateway": "$global_gateway",
+  "DNS": "$global_dns",
+  "DHCP": "$global_dhcp"
 }
 EOF
 }
-
-
 
 # Main execution flow
 main() {
