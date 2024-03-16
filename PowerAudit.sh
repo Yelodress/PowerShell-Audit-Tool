@@ -103,12 +103,61 @@ gather_gpu_info() {
     global_gpu_driver_date="To be implemented"
 }
 
+gather_ram_info() {
+    # Nécessite des privilèges d'administrateur pour exécuter dmidecode
+    # RAM Manufacturer (Prend le premier module de mémoire comme exemple)
+    global_ram_manufacturer=$(sudo dmidecode -t memory | grep "Manufacturer" | head -n 1 | awk -F: '{print $2}' | sed 's/^\s*//')
+    
+    # Total RAM Amount
+    global_total_ram_amount=$(free -h | grep "Mem:" | awk '{print $2}')
+    
+    # RAM Speed (Prend le premier module de mémoire comme exemple)
+    global_ram_speed=$(sudo dmidecode -t memory | grep "Speed" | grep -v "Unknown" | head -n 1 | awk -F: '{print $2}' | sed 's/^\s*//')
+    
+    # RAM Channel et Slot sont un peu plus complexes à déterminer directement via une commande simple.
+    # Ici, on compte simplement le nombre de slots utilisés et le nombre total de slots.
+    local slots_used=$(sudo dmidecode -t memory | grep "Size" | grep -v "No Module Installed" | wc -l)
+    local total_slots=$(sudo dmidecode -t memory | grep "Bank Locator" | wc -l)
+    
+    global_ram_slot="$slots_used used of $total_slots total"
+    
+    # RAM Channel - dmidecode ne fournit pas directement cette info, donc ceci est une simplification.
+    # Dans les systèmes modernes, la RAM est généralement en mode dual, triple ou quad channel, ce qui dépend de l'architecture spécifique.
+    # Une évaluation précise nécessiterait une analyse plus détaillée spécifique au matériel.
+    global_ram_channel="To be determined manually"
+}
+
+gather_disk_info() {
+    # Liste des disques et leurs types
+    global_disks_type=$(lsblk -d -o NAME,TYPE | grep disk | awk '{print $2}' | xargs)
+
+    # Modèles des disques
+    global_disks_model=$(lsblk -d -o NAME,MODEL | grep disk | awk '{$1=""; print $0}' | sed 's/^\s*//' | xargs)
+
+    # Santé des disques (Nécessite smartmontools)
+    # Note: smartctl nécessite des privilèges root pour accéder à la plupart des informations
+    if command -v smartctl &>/dev/null; then
+        disk_names=$(lsblk -d -o NAME | grep -v NAME | xargs)
+        global_disks_health=""
+        for disk in $disk_names; do
+            health=$(sudo smartctl -H /dev/$disk | grep "SMART overall-health" | awk '{print $6}')
+            global_disks_health+="$disk: $health; "
+        done
+    else
+        global_disks_health="smartctl not installed"
+    fi
+
+    # Partitions des disques
+    global_disks_partitions=$(lsblk -o NAME,TYPE | grep part | awk '{print $1}' | xargs)
+}
 
 # System info gathering
 gather_system_info() {
     gather_basic_system_info
     gather_cpu_info
     gather_gpu_info
+    gather_ram_info
+    gather_disk_info
 }
 
 # Exporting files
@@ -121,16 +170,21 @@ export_files() {
 }
 
 export_to_csv() {
-    echo $outputFolderName
     local csv_file="$outputFolderName/system_info.csv"
-    echo $csv_file
-    echo "Username,Administrator,Model,Manufacturer,S/N,BIOS Version,Computer name,CPU Model,CPU Cores,CPU Threads per Core,CPU Max Speed,CPU Min Speed,CPU Architecture,GPU,GPU Driver Version,GPU Driver Date" > "$csv_file"
-    echo "\"$global_username\",\"$global_is_admin\",\"$global_model\",\"$global_manufacturer\",\"$global_serial_number\",\"$global_bios_version\",\"$global_computer_name\",\"$global_cpu_model\",\"$global_cpu_cores\",\"$global_cpu_threads_per_core\",\"$global_cpu_max_speed\",\"$global_cpu_min_speed\",\"$global_cpu_architecture\",\"$global_gpu\",\"$global_gpu_driver_version\",\"$global_gpu_driver_date\"" >> "$csv_file"
+    
+    # Extension des en-têtes CSV avec les informations sur les disques
+    echo "Username,Administrator,Model,Manufacturer,S/N,BIOS Version,Computer name,CPU Model,CPU Cores,CPU Threads per Core,CPU Max Speed,CPU Min Speed,CPU Architecture,GPU,GPU Driver Version,GPU Driver Date,RAM Manufacturer,Total RAM Amount,RAM Speed,RAM Slot,RAM Channel,Disks Type,Disks Model,Disks Health,Disks Partitions" > "$csv_file"
+    
+    # Ajout des informations sur les disques aux données à exporter
+    echo "\"$global_username\",\"$global_is_admin\",\"$global_model\",\"$global_manufacturer\",\"$global_serial_number\",\"$global_bios_version\",\"$global_computer_name\",\"$global_cpu_model\",\"$global_cpu_cores\",\"$global_cpu_threads_per_core\",\"$global_cpu_max_speed\",\"$global_cpu_min_speed\",\"$global_cpu_architecture\",\"$global_gpu\",\"$global_gpu_driver_version\",\"$global_gpu_driver_date\",\"$global_ram_manufacturer\",\"$global_total_ram_amount\",\"$global_ram_speed\",\"$global_ram_slot\",\"$global_ram_channel\",\"$global_disks_type\",\"$global_disks_model\",\"$global_disks_health\",\"$global_disks_partitions\"" >> "$csv_file"
 }
+
+
 
 
 export_to_json() {
     local json_file="$outputFolderName/system_info.json"
+    
     cat << EOF > "$json_file"
 {
   "Username": "$global_username",
@@ -143,15 +197,26 @@ export_to_json() {
   "CPU Model": "$global_cpu_model",
   "CPU Cores": "$global_cpu_cores",
   "CPU Threads per Core": "$global_cpu_threads_per_core",
-  "CPU Max Speed": "$global_cpu_max_speed MHz",
-  "CPU Min Speed": "$global_cpu_min_speed MHz",
+  "CPU Max Speed": "$global_cpu_max_speed",
+  "CPU Min Speed": "$global_cpu_min_speed",
   "CPU Architecture": "$global_cpu_architecture",
   "GPU": "$global_gpu",
   "GPU Driver Version": "$global_gpu_driver_version",
-  "GPU Driver Date": "$global_gpu_driver_date"
+  "GPU Driver Date": "$global_gpu_driver_date",
+  "RAM Manufacturer": "$global_ram_manufacturer",
+  "Total RAM Amount": "$global_total_ram_amount",
+  "RAM Speed": "$global_ram_speed",
+  "RAM Slot": "$global_ram_slot",
+  "RAM Channel": "$global_ram_channel",
+  "Disks Type": "$global_disks_type",
+  "Disks Model": "$global_disks_model",
+  "Disks Health": "$global_disks_health",
+  "Disks Partitions": "$global_disks_partitions"
 }
 EOF
 }
+
+
 
 # Main execution flow
 main() {
