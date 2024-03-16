@@ -5,7 +5,7 @@
 <a href="https://github.com/Yelodress/PowerShell-Audit-Tool/releases"><img alt="Static Badge" src="https://img.shields.io/badge/Release-v0.6.4-green?style=for-the-badge&labelColor=%23313244&color=%23a6e3a1" style="margin-right: 10px"> 
 </a>
 <h3>
-An open source PowerShell script for retrieving Windows computers specifications and storing them in CSV files.
+An open source PowerShell script for retrieving Windows computers specifications and storing them in CSV/JSON files.
 </h3>
 </div>
 
