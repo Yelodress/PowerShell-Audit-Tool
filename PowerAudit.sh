@@ -82,25 +82,27 @@ gather_cpu_info() {
 
 gather_gpu_info() {
     # Récupération du modèle du GPU
-    global_gpu=$(lspci | grep VGA | cut -d':' -f3 | sed 's/^ //')
+    global_gpu=$(lspci | grep "VGA compatible controller" | cut -d':' -f3 | sed 's/^ //')
+
+    # Récupération du pilote en cours d'utilisation et des modules de pilotes disponibles
+    gpu_info=$(lspci -v -s $(lspci | grep "VGA compatible controller" | cut -d' ' -f1) | grep -E "Kernel driver in use|Kernel modules")
+    global_gpu_driver=$(echo "$gpu_info" | grep "Kernel driver in use" | cut -d':' -f2 | sed 's/^ //')
+    global_gpu_modules=$(echo "$gpu_info" | grep "Kernel modules" | cut -d':' -f2 | sed 's/^ //')
     
-    # Placeholder pour la version du pilote et la date du pilote
-    # NOTE: Ces informations nécessitent des commandes spécifiques au fabricant ou au gestionnaire de pilotes
-        if command -v glxinfo &> /dev/null; then
-        global_gpu_driver_version=$(glxinfo | grep "OpenGL version" | sed 's/^.*: //')
+    # Utilisation de glxinfo pour obtenir la version du pilote OpenGL, si possible
+    if command -v glxinfo &> /dev/null; then
+        glxinfo_output=$(glxinfo 2>/dev/null | grep "OpenGL version" | sed 's/^.*: //')
+        if [ -z "$glxinfo_output" ]; then
+            global_gpu_driver_version="No display on this PC"
+        else
+            global_gpu_driver_version=$glxinfo_output
+        fi
     else
         global_gpu_driver_version="glxinfo not installed"
     fi
     global_gpu_driver_date="To be implemented"
-    
-    # Exemple pour un GPU NVIDIA (commenté car nécessite une implémentation spécifique)
-    # Si vous avez un GPU NVIDIA, vous pouvez décommenter et ajuster ce qui suit
-    # global_gpu_driver_version=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader)
-    # global_gpu_driver_date="To be determined"
-
-    # Pour les GPUs AMD et Intel, il pourrait être nécessaire de consulter des fichiers spécifiques
-    # ou d'utiliser des commandes comme `glxinfo` pour obtenir la version du pilote OpenGL comme proxy
 }
+
 
 # System info gathering
 gather_system_info() {
@@ -141,8 +143,8 @@ export_to_json() {
   "CPU Model": "$global_cpu_model",
   "CPU Cores": "$global_cpu_cores",
   "CPU Threads per Core": "$global_cpu_threads_per_core",
-  "CPU Max Speed": "$global_cpu_max_speed",
-  "CPU Min Speed": "$global_cpu_min_speed",
+  "CPU Max Speed": "$global_cpu_max_speed MHz",
+  "CPU Min Speed": "$global_cpu_min_speed MHz",
   "CPU Architecture": "$global_cpu_architecture",
   "GPU": "$global_gpu",
   "GPU Driver Version": "$global_gpu_driver_version",
