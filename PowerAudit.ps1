@@ -3,7 +3,7 @@
 |  _ \ _____      _____ _ __ / \  _   _  __| (_) |_ 
 | |_) / _ \ \ /\ / / _ \ '__/ _ \| | | |/ _` | | __|
 |  __/ (_) \ V  V /  __/ | / ___ \ |_| | (_| | | |_ 
-|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.6.3
+|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.6.4
 
 
 "@
@@ -51,6 +51,8 @@ $biosInfo = Get-CimInstance Win32_BIOS | Select-Object SerialNumber, SMBIOSBIOSV
 $processorInfo = Get-CimInstance Win32_Processor | Select-Object Name, MaxClockSpeed, NumberOfCores # Obtain CPU name, max clock speed, Number of cores
 
 $gpuInfo = Get-CimInstance Win32_VideoController | Where-Object { ($_.Name -notlike '*virtual*') -and $_.DriverVersion -and $_.DriverDate } # Obtain GPU info
+
+$gpuVRAM = [math]::round((Get-ItemProperty -Path "HKLM:\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0*" -Name HardwareInformation.qwMemorySize -ErrorAction SilentlyContinue)."HardwareInformation.qwMemorySize"/1GB)
 
 $ramInfo = Get-CimInstance Win32_PhysicalMemory | Select-Object Manufacturer, Banklabel, DeviceLocator, Speed  # Obtain RAM info
 
@@ -129,7 +131,7 @@ $scanID = [Guid]::NewGuid().ToString("N").Substring(0, 8)  # Taking first 8 char
 $stepName = "Searching for Office"
 Show-CustomProgressBar -CurrentStep 10 -TotalSteps $TotalSteps
 
-$office = ($appsList | Where-Object { ($_.DisplayName -like "*365*" -or $_.DisplayName -like "*Microsoft Office*") -and $_.Displayname -notlike "*Microsoft Teams*" } | Select-Object -ExpandProperty DisplayName) -replace '^Microsoft ', '' -replace ' -.*$', '' # $office take the app name found 
+$office = ($appsList | Where-Object { ($_.DisplayName -like "*365*" -or $_.DisplayName -like "*Microsoft Office Standard*" -or $_.DisplayName -like "*Microsoft Office Pro*") -and $_.Displayname -notlike "*Microsoft Teams*" } | Select-Object -ExpandProperty DisplayName -First 1) -replace '^Microsoft ', '' -replace ' -.*$' # $office take the app name found 
 
 #---------------------------------------------- Checking if current user is admin -----------------------------------------------
 $stepName = "Checking your role"
@@ -156,6 +158,7 @@ $combinedData = [PSCustomObject]@{
     "Number of cores"      = $processorInfo.NumberOfCores
     "Frequency"            = ($processorInfo.MaxClockSpeed / 1000).ToString() + " GHz"
     "GPU"                  = ($gpuInfo | ForEach-Object { $_.Name }) -join ', '
+    "GPU VRAM"             = ($gpuVRAM.ToString() + " GB") -join ', '
     "GPU driver version"   = ($gpuInfo | ForEach-Object { $_.DriverVersion }) -join ', '
     "GPU Driver date"      = ($gpuInfo | ForEach-Object { $_.DriverDate.ToShortDateString() }) -join ', '
     "RAM manufacturer"     = ($ramInfo | ForEach-Object { $_.Manufacturer }) -join ', '
@@ -179,7 +182,7 @@ $combinedData = [PSCustomObject]@{
     "DHCP"                 = ($networkConf | ForEach-Object { if ($_.DHCPEnabled) { "Yes" } else { "No" } }) -join ', '
     "Printers"             = ($printers | ForEach-Object { $_.Name }) -join ', '
     "Bitlocker encryption" = (ForEach-Object {$isEncrypted}) -join ', '
-    "Office Version"       = if ($office) { $office } else { "No" }
+    "Office Version"       = if ($office) { $office -join ', '} else { "No" }
     "Initial install date" = ((Get-Date 01.01.1970) + ([System.TimeSpan]::fromseconds($initialInstallDate))).ToString("yyyy-MM-dd")
     "Scan date"            = $currentDate
     "Scan ID"              = $scanID
