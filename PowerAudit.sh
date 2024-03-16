@@ -12,9 +12,14 @@ if ! locale -a | grep -q 'en_US.utf8\|en_US.UTF-8'; then
     # Exécute locale-gen pour générer la locale (utilise sudo si nécessaire)
     sudo locale-gen
 
+    export LANG=en_US.UTF-8
+    export LC_ALL=en_US.UTF-8
+
     echo "Locale en_US.UTF-8 activée et générée."
 else
     echo "Locale en_US.UTF-8 déjà disponible."
+    export LANG=en_US.UTF-8
+    export LC_ALL=en_US.UTF-8
 fi
 
 echo "
