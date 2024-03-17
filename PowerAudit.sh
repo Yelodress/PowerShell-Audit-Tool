@@ -1,21 +1,23 @@
 #!/bin/bash
 
+# Save original locale settings
 original_lang=$LANG
 original_lc_all=$LC_ALL
 
+# Check if en_US.UTF-8 locale is available and activate it if not
 if ! locale -a | grep -q 'en_US.utf8\|en_US.UTF-8'; then
-    echo "Locale en_US.UTF-8 non disponible. Tentative d'activation..."
+    echo "Locale en_US.UTF-8 not available. Attempting to activate..."
 
-    # Décommente la ligne pour la locale en_US.UTF-8 (utilise sudo si nécessaire)
+    # Uncomment the line for en_US.UTF-8 locale (use sudo if necessary)
     sudo sed -i '/# en_US.UTF-8 UTF-8/s/^# //' /etc/locale.gen
     
-    # Exécute locale-gen pour générer la locale (utilise sudo si nécessaire)
+    # Execute locale-gen to generate the locale (use sudo if necessary)
     sudo locale-gen
 
     export LANG=en_US.UTF-8
     export LC_ALL=en_US.UTF-8
 
-    echo "Locale en_US.UTF-8 activated et generated."
+    echo "Locale en_US.UTF-8 activated and generated."
 else
     export LANG=en_US.UTF-8
     export LC_ALL=en_US.UTF-8
@@ -29,23 +31,20 @@ echo "
 |_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.6.1 pre-release
 "
 
-# Progress-bar definition
+# Definition of the progress bar
 total_steps=12
 step=1
 
 show_custom_progress_bar() {
     local current_step=$1
-    local step_name=$2
+    local step_name=$2  # Step name is now a parameter
     local progress_width=50
     local filled=$((current_step * progress_width / total_steps))
-    local empty=$((progress_width - filled))
     local filled_bar=$(printf "%0.s#" $(seq 1 $filled))
-    local empty_bar=$(printf "%0.s-" $(seq 1 $empty))
-    printf "\r[%s%s] %d/%d %s" "$filled_bar" "$empty_bar" "$current_step" "$total_steps" "$step_name            "
+    local empty_bar=$(printf "%0.s-" $(seq 1 $((progress_width - filled))))
+    printf "\r[%s%s] %d/%d %s            " "$filled_bar" "$empty_bar" "$current_step" "$total_steps" "$step_name"
     [[ "$current_step" -eq "$total_steps" ]] && echo ""
 }
-
-
 
 # Folder creation
 prepare_folders() {
@@ -67,14 +66,13 @@ list_programs() {
 gather_basic_system_info() {
     global_username=$(whoami)
     global_is_admin=$(id -u)
-    [ "$global_is_admin" -eq 0 ] && global_is_admin="Yes" || global_is_admin="No"
+    global_is_admin=$([ "$global_is_admin" -eq 0 ] && echo "Yes" || echo "No")
     global_model=$(dmidecode -s system-product-name)
     global_manufacturer=$(dmidecode -s system-manufacturer)
     global_serial_number=$(dmidecode -s system-serial-number)
     global_bios_version=$(dmidecode -s bios-version)
     global_computer_name=$(hostname)
 }
-
 
 gather_cpu_info() {
     global_cpu_model=$(lscpu | awk -F: '/Model name/{print $2}' | sed 's/^[ \t]*//;s/[ \t]*$//')
@@ -86,17 +84,17 @@ gather_cpu_info() {
 }
 
 gather_gpu_info() {
-    # Récupération du modèle du GPU
+    # Retrieving GPU model
     global_gpu=$(lspci | grep "VGA compatible controller" | cut -d':' -f3 | sed 's/^ //')
 
-    # Récupération du pilote en cours d'utilisation et des modules de pilotes disponibles
-    gpu_info=$(lspci -v -s $(lspci | grep "VGA compatible controller" | cut -d' ' -f1) | grep -E "Kernel driver in use|Kernel modules")
+    # Retrieving the currently used driver and available driver modules
+    local gpu_info=$(lspci -v -s $(lspci | grep "VGA compatible controller" | cut -d' ' -f1) | grep -E "Kernel driver in use|Kernel modules")
     global_gpu_driver=$(echo "$gpu_info" | grep "Kernel driver in use" | cut -d':' -f2 | sed 's/^ //')
     global_gpu_modules=$(echo "$gpu_info" | grep "Kernel modules" | cut -d':' -f2 | sed 's/^ //')
     
-    # Utilisation de glxinfo pour obtenir la version du pilote OpenGL, si possible
+    # Using glxinfo to get the OpenGL driver version, if possible
     if command -v glxinfo &> /dev/null; then
-        glxinfo_output=$(glxinfo 2>/dev/null | grep "OpenGL version" | sed 's/^.*: //')
+        local glxinfo_output=$(glxinfo 2>/dev/null | grep "OpenGL version" | sed 's/^.*: //')
         if [ -z "$glxinfo_output" ]; then
             global_gpu_driver_version="No display on this PC"
         else
@@ -109,73 +107,73 @@ gather_gpu_info() {
 }
 
 gather_ram_info() {
-    # Nécessite des privilèges d'administrateur pour exécuter dmidecode
-    # RAM Manufacturer (Prend le premier module de mémoire comme exemple)
+    # Requires admin privileges to run dmidecode
+    # RAM Manufacturer (Taking the first memory module as an example)
     global_ram_manufacturer=$(sudo dmidecode -t memory | grep "Manufacturer" | head -n 1 | awk -F: '{print $2}' | sed 's/^\s*//')
     
     # Total RAM Amount
     global_total_ram_amount=$(free -h | grep "Mem:" | awk '{print $2}')
     
-    # RAM Speed (Prend le premier module de mémoire comme exemple)
+    # RAM Speed (Taking the first memory module as an example)
     global_ram_speed=$(sudo dmidecode -t memory | grep "Speed" | grep -v "Unknown" | head -n 1 | awk -F: '{print $2}' | sed 's/^\s*//')
     
-    # RAM Channel et Slot sont un peu plus complexes à déterminer directement via une commande simple.
-    # Ici, on compte simplement le nombre de slots utilisés et le nombre total de slots.
+    # RAM Slots and Channels are more complex to determine directly via a simple command.
+    # Here, we simply count the number of used slots and the total number of slots.
     local slots_used=$(sudo dmidecode -t memory | grep "Size" | grep -v "No Module Installed" | wc -l)
     local total_slots=$(sudo dmidecode -t memory | grep "Bank Locator" | wc -l)
     
     global_ram_slot="$slots_used used of $total_slots total"
     
-    # RAM Channel - dmidecode ne fournit pas directement cette info, donc ceci est une simplification.
-    # Dans les systèmes modernes, la RAM est généralement en mode dual, triple ou quad channel, ce qui dépend de l'architecture spécifique.
-    # Une évaluation précise nécessiterait une analyse plus détaillée spécifique au matériel.
+    # RAM Channel - dmidecode does not directly provide this info, so this is a simplification.
+    # In modern systems, RAM is generally in dual, triple, or quad channel mode, depending on the specific architecture.
+    # A precise assessment would require more detailed hardware-specific analysis.
     global_ram_channel="To be determined manually"
 }
 
 gather_disk_info() {
-    # Liste des disques et leurs types
+    # List of disks and their types
     global_disks_type=$(lsblk -d -o NAME,TYPE | grep disk | awk '{print $2}' | xargs)
 
-    # Modèles des disques
+    # Disk models
     global_disks_model=$(lsblk -d -o NAME,MODEL | grep disk | awk '{$1=""; print $0}' | sed 's/^\s*//' | xargs)
 
-    # Santé des disques (Nécessite smartmontools)
-    # Note: smartctl nécessite des privilèges root pour accéder à la plupart des informations
+    # Disk health (Requires smartmontools)
+    # Note: smartctl requires root privileges to access most information
     if command -v smartctl &>/dev/null; then
-        disk_names=$(lsblk -d -o NAME | grep -v NAME | xargs)
+        local disk_names=$(lsblk -d -o NAME | grep -v NAME | xargs)
         global_disks_health=""
         for disk in $disk_names; do
-            health=$(sudo smartctl -H /dev/$disk | grep "SMART overall-health" | awk '{print $6}')
+            local health=$(sudo smartctl -H /dev/$disk | grep "SMART overall-health" | awk '{print $6}')
             global_disks_health+="$disk: $health; "
         done
     else
         global_disks_health="smartctl not installed"
     fi
 
-    # Partitions des disques
+    # Disk partitions
     global_disks_partitions=$(lsblk -o NAME,TYPE | grep part | awk '{print $1}' | xargs)
 }
 
 gather_network_info() {
-    # Domaine
+    # Domain
     global_domain=$(hostname -d)
     if [ -z "$global_domain" ]; then
         global_domain="Not set or not applicable"
     fi
     
-    # Adresse IP (l'interface principale utilisée pour la passerelle par défaut est un bon candidat)
+    # IP Address (the main interface used for the default gateway is a good candidate)
     global_ipaddress=$(ip route get 1.1.1.1 | grep -oP 'src \K\S+')
     
-    # Passerelle
+    # Gateway
     global_gateway=$(ip route | grep default | awk '{print $3}')
     
-    # Serveur DNS (peut varier selon la configuration, ici on regarde resolv.conf comme exemple)
+    # DNS Server (can vary according to configuration, here we look at resolv.conf as an example)
     global_dns=$(grep "nameserver" /etc/resolv.conf | awk '{print $2}' | xargs)
     
-    # DHCP (utilise nmcli si disponible, sinon indique une vérification manuelle)
+    # DHCP (uses nmcli if available, otherwise indicates a manual check)
     if command -v nmcli >/dev/null 2>&1; then
-        # Ceci suppose que vous avez une connexion nommée "System eth0" ou similaire.
-        # Vous devrez peut-être ajuster selon le nom de votre connexion réseau.
+        # This assumes you have a connection named "System eth0" or similar.
+        # You might need to adjust according to your network connection name.
         global_dhcp=$(nmcli -t -f IP4.DHCP4.OPTIONS device show | grep 'dhcp_lease_time' | cut -d':' -f2 | xargs)
         if [ -z "$global_dhcp" ]; then
             global_dhcp="Not set or not applicable"
@@ -186,25 +184,25 @@ gather_network_info() {
 }
 
 gather_misc_info() {
-    # Date et heure du scan
+    # Scan date and time
     global_scan_date=$(date "+%Y-%m-%d %H:%M:%S")
     
-    # Générer un ID de scan simple basé sur la date/heure actuelle
+    # Generate a simple scan ID based on the current date/time
     global_scan_id=$(date "+%Y%m%d%H%M%S")
     
-    # Récupérer les informations des imprimantes (CUPS doit être installé)
+    # Retrieve printer information (requires CUPS to be installed)
     global_printers=$(lpstat -a 2>/dev/null | awk '{print $1}' | xargs)
     if [ -z "$global_printers" ]; then
         global_printers="No printers found or CUPS not installed"
     fi
     
-    # BitLocker Encryption, Office Version ne sont pas applicables sous Linux
+    # BitLocker Encryption and Office Version are not applicable on Linux
     global_bitlocker_encryption="Not applicable on Linux"
     global_office_version="Not applicable on Linux"
     
-    # Date d'installation initiale de l'OS (approche basée sur la date de création du système de fichiers root)
-    # Cette commande peut nécessiter des droits d'administration et n'est pas infaillible
-    global_initial_install_date=$(sudo tune2fs -l /dev/sda2 | grep 'Filesystem created:' | cut -d':' -f2)
+    # Initial OS installation date (based on the filesystem creation date)
+    # This command may require admin privileges and is not foolproof
+    global_initial_install_date=$(sudo tune2fs -l /dev/sda2 | grep 'Filesystem created:')
 }
 
 # System info gathering
@@ -237,7 +235,6 @@ gather_system_info() {
     gather_misc_info
 }
 
-
 # Exporting files
 export_files() {
     case $choice in
@@ -259,6 +256,7 @@ export_to_csv() {
 
 export_to_json() {
     local json_file="$outputFolderName/system_info.json"
+    echo $json_file
     
     cat << EOF > "$json_file"
 {
@@ -320,6 +318,7 @@ main() {
     echo "Choose your output format: [1] CSV, [2] JSON"
     read -p "Choice: " choice
     [[ ! $choice =~ ^[1-2]$ ]] && { echo "Invalid choice."; exit 1; }
+    echo $choice
     export_files
 
     export LANG=$original_lang
