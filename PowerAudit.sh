@@ -15,9 +15,8 @@ if ! locale -a | grep -q 'en_US.utf8\|en_US.UTF-8'; then
     export LANG=en_US.UTF-8
     export LC_ALL=en_US.UTF-8
 
-    echo "Locale en_US.UTF-8 activée et générée."
+    echo "Locale en_US.UTF-8 activated et generated."
 else
-    echo "Locale en_US.UTF-8 déjà disponible."
     export LANG=en_US.UTF-8
     export LC_ALL=en_US.UTF-8
 fi
@@ -32,15 +31,21 @@ echo "
 
 # Progress-bar definition
 total_steps=12
+step=1
 
 show_custom_progress_bar() {
     local current_step=$1
+    local step_name=$2
     local progress_width=50
     local filled=$((current_step * progress_width / total_steps))
     local empty=$((progress_width - filled))
-    printf "\r[%-${progress_width}s] %d/12 %s" "${progress_bar:0:$filled}" "$current_step" "$stepName"
+    local filled_bar=$(printf "%0.s#" $(seq 1 $filled))
+    local empty_bar=$(printf "%0.s-" $(seq 1 $empty))
+    printf "\r[%s%s] %d/%d %s" "$filled_bar" "$empty_bar" "$current_step" "$total_steps" "$step_name            "
     [[ "$current_step" -eq "$total_steps" ]] && echo ""
 }
+
+
 
 # Folder creation
 prepare_folders() {
@@ -204,14 +209,34 @@ gather_misc_info() {
 
 # System info gathering
 gather_system_info() {
+    show_custom_progress_bar $step "Gathering basic system info..."
     gather_basic_system_info
+    step=$((step + 1))
+
+    show_custom_progress_bar $step "Gathering CPU info..."
     gather_cpu_info
+    step=$((step + 1))
+
+    show_custom_progress_bar $step "Gathering GPU info..."
     gather_gpu_info
+    step=$((step + 1))
+
+    show_custom_progress_bar $step "Gathering RAM info..."
     gather_ram_info
+    step=$((step + 1))
+
+    show_custom_progress_bar $step "Gathering disk info..."
     gather_disk_info
+    step=$((step + 1))
+
+    show_custom_progress_bar $step "Gathering network info..."
     gather_network_info
+    step=$((step + 1))
+
+    show_custom_progress_bar $step "Gathering miscellaneous info..."
     gather_misc_info
 }
+
 
 # Exporting files
 export_files() {
@@ -279,9 +304,19 @@ EOF
 
 # Main execution flow
 main() {
-    prepare_folders
-    list_programs
     gather_system_info
+    step=$((step + 1))
+    show_custom_progress_bar $step "Creating folder..."
+    prepare_folders
+    step=$((step + 1))
+    show_custom_progress_bar $step "Listing all the programs"
+    list_programs    
+        step=$((step + 1))
+    show_custom_progress_bar $step "Listing all the programs"
+        step=$((step + 1))
+    show_custom_progress_bar $step "Listing all the programs"
+        step=$((step + 1))
+    show_custom_progress_bar $step "Listing all the programs"
     echo "Choose your output format: [1] CSV, [2] JSON"
     read -p "Choice: " choice
     [[ ! $choice =~ ^[1-2]$ ]] && { echo "Invalid choice."; exit 1; }
