@@ -3,14 +3,14 @@
 |  _ \ _____      _____ _ __ / \  _   _  __| (_) |_ 
 | |_) / _ \ \ /\ / / _ \ '__/ _ \| | | |/ _` | | __|
 |  __/ (_) \ V  V /  __/ | / ___ \ |_| | (_| | | |_ 
-|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.6.4
+|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.6.5
 
 
 "@
 
 #-------------------------------------------- Progress-bar definition ---------------------------------------------
 
-$TotalSteps = 13 
+$TotalSteps = 14 
 
 function Show-CustomProgressBar {
     param(
@@ -20,7 +20,7 @@ function Show-CustomProgressBar {
     )
     $ProgressWidth = 50
     $Progress = "o" * ($CurrentStep * $ProgressWidth / $TotalSteps)
-    Write-Host "`r[$Progress".PadRight($ProgressWidth) "] $CurrentStep/13 $StepName           " -NoNewline
+    Write-Host "`r[$Progress".PadRight($ProgressWidth) "] $CurrentStep/14 $StepName           " -NoNewline
     if ($CurrentStep -eq $TotalSteps) {
         Write-Host ""
     }
@@ -68,6 +68,10 @@ $totalSpace = Get-Volume | Where-Object { $_.DriveType -ne 'Removable' -and $_.D
 
 $diskID = Get-CimInstance Win32_LogicalDisk | Where-Object { $_.ProviderName -notlike '*\\*'}| Select-Object DeviceID # Get the disk letter
 
+#------------------------------------------------- Network drive --------------------------------------------------
+
+$networkDrive = Get-CimInstance Win32_NetworkConnection
+
 #---------------------------------------------- System informations -----------------------------------------------
 $stepName = "Getting system informations"
 Show-CustomProgressBar -CurrentStep 4 -TotalSteps $TotalSteps
@@ -80,7 +84,7 @@ $initialInstallDate = Get-ItemProperty 'HKLM:\Software\Microsoft\Windows NT\Curr
 $stepName = "Getting network informations"
 Show-CustomProgressBar -CurrentStep 5 -TotalSteps $TotalSteps
 
-$networkConf = Get-CimInstance Win32_NetworkAdapterConfiguration -Filter "IPEnabled = TRUE" # Obtain infos about network cards that have an IP address
+$networkConf = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object {$_.Caption -notlike "*virtual*" -and $_.Caption -notlike "*WAN*"  -and $_.Caption -notlike "*bluetooth*" -and $_.MACAddress -ne $null} # Obtain infos about network cards that have an IP address
 
 #---------------------------------------------- Printers informations -----------------------------------------------
 $stepName = "Getting printers informations"
@@ -131,7 +135,7 @@ $scanID = [Guid]::NewGuid().ToString("N").Substring(0, 8)  # Taking first 8 char
 $stepName = "Searching for Office"
 Show-CustomProgressBar -CurrentStep 10 -TotalSteps $TotalSteps
 
-$office = ($appsList | Where-Object { ($_.DisplayName -like "*365*" -or $_.DisplayName -like "*Microsoft Office Standard*" -or $_.DisplayName -like "*Microsoft Office Pro*") -and $_.Displayname -notlike "*Microsoft Teams*" } | Select-Object -ExpandProperty DisplayName -First 1) -replace '^Microsoft ', '' -replace ' -.*$' # $office take the app name found 
+$office = ($appsList | Where-Object { $_.DisplayName -like "*365*" -or $_.DisplayName -like "*Microsoft Office Standard*" -or $_.DisplayName -like "*Microsoft Office Pro*" -or $_.DisplayName -like "*Microsoft Office Fam*" -or $_.DisplayName -like "*Microsoft Office Ent*" -or $_.DisplayName -like "*Microsoft Office Home*" } | Select-Object -ExpandProperty DisplayName -First 1) -replace '^Microsoft ', '' -replace ' -.*$' # $office take the app name found 
 
 #---------------------------------------------- Checking if current user is admin -----------------------------------------------
 $stepName = "Checking your role"
@@ -142,9 +146,15 @@ $administratorsGroupName = $administratorsGroupName.Split('\')[-1] # Cut it befo
 $adminGroupMembers = net localgroup "$administratorsGroupName" # Checking all usernames in this admin group
 $userName = $systemInfo.UserName.Split('\')[-1] # Cutting current username before the backslash
 
+#------------------------------------------------- Getting antivirus --------------------------------------------------
+$stepName = "Checking your antivirus"
+Show-CustomProgressBar -CurrentStep 12 -TotalSteps $TotalSteps
+
+$antivirus = Get-CimInstance -Namespace "ROOT\SecurityCenter2" -ClassName AntivirusProduct 
+
 #------------------------------------------------- Creating global tab --------------------------------------------------
 $stepName = "Generating tab"
-Show-CustomProgressBar -CurrentStep 12 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 13 -TotalSteps $TotalSteps
 
 $combinedData = [PSCustomObject]@{
     "Username"             = $userName
@@ -172,16 +182,19 @@ $combinedData = [PSCustomObject]@{
     "Disks model"          = ($physicalDisksInfo | ForEach-Object { $_.Model }) -join ', '
     "Disks health"         = ($diskInfo | ForEach-Object { $_.HealthStatus }) -join ', '
     "Disks partitions"     = ($diskInfo | ForEach-Object { $_.PartitionStyle }) -join ', '
+    "Network drives"       = ($networkDrive | ForEach-Object { $_.LocalName + $_.RemoteName }) -join ', '
     "OS"                   = $osInfo.Caption
     "Version"              = $osInfo.Version
     "Architecture"         = $osInfo.OSArchitecture
     "Domain"               = $systemInfo.Domain
     "IP Address"           = ($networkConf | ForEach-Object { $_.IPAddress }) -join ', '
+    "MAC Address"          = ($networkConf | ForEach-Object { $_.MACAddress }) -join ', '
     "Gateway"              = ($networkConf | ForEach-Object { $_.DefaultIPGateway }) -join ', '
     "DNS"                  = ($networkConf | ForEach-Object { $_.DNSServerSearchOrder }) -join ', '
     "DHCP"                 = ($networkConf | ForEach-Object { if ($_.DHCPEnabled) { "Yes" } else { "No" } }) -join ', '
     "Printers"             = ($printers | ForEach-Object { $_.Name }) -join ', '
     "Bitlocker encryption" = (ForEach-Object {$isEncrypted}) -join ', '
+    "Antivirus"            = ($antivirus|ForEach-Object {$_.DisplayName}) -join ', '
     "Office Version"       = if ($office) { $office -join ', '} else { "No" }
     "Initial install date" = ((Get-Date 01.01.1970) + ([System.TimeSpan]::fromseconds($initialInstallDate))).ToString("yyyy-MM-dd")
     "Scan date"            = $currentDate
@@ -190,7 +203,7 @@ $combinedData = [PSCustomObject]@{
 
 #----------------------------------------------- Exporting all CSV files ------------------------------------------------
 $stepName = "Exporting files"
-Show-CustomProgressBar -CurrentStep 13 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 14 -TotalSteps $TotalSteps
 
 $fileName = "results"
 $fileName2 = $systemInfo.UserName.Split('\')[-1] + "-" + $scanID
