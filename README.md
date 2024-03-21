@@ -2,10 +2,10 @@
 <h1>PowerAudit</h1>
 <a href="https://github.com/Yelodress/PowerShell-Audit-Tool/releases"><img alt="Static Badge" src="https://img.shields.io/badge/windows_version-8.1_%7C_10_%7C_11-green?style=for-the-badge&logo=windows&labelColor=%23313244&color=%2389dceb" style="margin-right: 10px"></a>
 <a href="https://github.com/Yelodress/PowerShell-Audit-Tool/releases"><img alt="Static Badge" src="https://img.shields.io/badge/Any-%23f5a97f?style=for-the-badge&logo=linux&logoColor=white&label=Linux%20version&labelColor=%23313244&color=%23c6a0f6"></a>
-<a href="https://github.com/Yelodress/PowerShell-Audit-Tool/releases"><img alt="Static Badge" src="https://img.shields.io/badge/Release-v0.6.4-green?style=for-the-badge&labelColor=%23313244&color=%23a6e3a1" style="margin-right: 10px"> 
+<a href="https://github.com/Yelodress/PowerShell-Audit-Tool/releases"><img alt="Static Badge" src="https://img.shields.io/badge/Release-v0.6.5-green?style=for-the-badge&labelColor=%23313244&color=%23a6e3a1" style="margin-right: 10px"> 
 </a>
 <h3>
-An open source PowerShell script for retrieving Windows computers specifications and storing them in CSV/JSON files.
+An open source PowerShell script for retrieving computers specifications and storing them in CSV/JSON files.
 </h3>
 </div>
 
@@ -68,6 +68,7 @@ If you're facing issues with this script, tell me [here](https://github.com/Yelo
 - Models
 - Health status
 - Partition type
+- Network drives
 ### System
 #### <img src="https://api.iconify.design/mdi:account.svg?color=%23cdd6f4" height="15"  alt=""> User
 - Username
@@ -75,6 +76,7 @@ If you're facing issues with this script, tell me [here](https://github.com/Yelo
 #### <img src="https://api.iconify.design/material-symbols:router.svg?color=%23cdd6f4" height="15"  alt=""> Network configuration
 - Domain
 - IP address
+- MAC address
 - Gateway
 - DNS
 - DHCP status
@@ -85,6 +87,7 @@ If you're facing issues with this script, tell me [here](https://github.com/Yelo
 - Computer's hostname
 #### <img src="https://api.iconify.design/material-symbols:lock.svg?color=%23cdd6f4" height="15"  alt=""> Security
 - BitLocker encryption status
+- Installed antivirus
 ### Others
 #### <img src="https://api.iconify.design/mdi:printer.svg?color=%23cdd6f4" height="15"  alt=""> Peripherals
 - Printer(s) name(s)
