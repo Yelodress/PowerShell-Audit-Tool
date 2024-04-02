@@ -3,7 +3,7 @@
 |  _ \ _____      _____ _ __ / \  _   _  __| (_) |_ 
 | |_) / _ \ \ /\ / / _ \ '__/ _ \| | | |/ _` | | __|
 |  __/ (_) \ V  V /  __/ | / ___ \ |_| | (_| | | |_ 
-|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.6.5
+|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.6.6
 
 
 "@
@@ -194,7 +194,8 @@ $combinedData = [PSCustomObject]@{
     "DHCP"                 = ($networkConf | ForEach-Object { if ($_.DHCPEnabled) { "Yes" } else { "No" } }) -join ', '
     "Printers"             = ($printers | ForEach-Object { $_.Name }) -join ', '
     "Bitlocker encryption" = (ForEach-Object {$isEncrypted}) -join ', '
-    "Antivirus"            = ($antivirus|ForEach-Object {$_.DisplayName}) -join ', '
+    "Active Antivirus"        = ($antivirus | Where-Object { $_.productState -notlike '*393*' -and $_.productState -notlike '0' } |ForEach-Object {$_.DisplayName}) -join ', '
+    "Other antivirus"        = ($antivirus | Where-Object { $_.productState -notlike '*266*' } |ForEach-Object {$_.DisplayName}) -join ', '
     "Office Version"       = if ($office) { $office -join ', '} else { "No" }
     "Initial install date" = ((Get-Date 01.01.1970) + ([System.TimeSpan]::fromseconds($initialInstallDate))).ToString("yyyy-MM-dd")
     "Scan date"            = $currentDate
