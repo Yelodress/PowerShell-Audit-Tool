@@ -3,7 +3,7 @@
 |  _ \ _____      _____ _ __ / \  _   _  __| (_) |_ 
 | |_) / _ \ \ /\ / / _ \ '__/ _ \| | | |/ _` | | __|
 |  __/ (_) \ V  V /  __/ | / ___ \ |_| | (_| | | |_ 
-|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.6.7
+|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.7.0
 
 
 "@
@@ -20,7 +20,7 @@ function Show-CustomProgressBar {
     )
     $ProgressWidth = 50
     $Progress = "o" * ($CurrentStep * $ProgressWidth / $TotalSteps)
-    Write-Host "`r[$Progress".PadRight($ProgressWidth) "] $CurrentStep/14 $StepName           " -NoNewline
+    Write-Host "`r[$Progress".PadRight($ProgressWidth) "] $CurrentStep/15 $StepName           " -NoNewline
     if ($CurrentStep -eq $TotalSteps) {
         Write-Host ""
     }
@@ -48,7 +48,7 @@ $systemInfo = Get-CimInstance Win32_ComputerSystem | Select-Object Manufacturer,
 
 $biosInfo = Get-CimInstance Win32_BIOS | Select-Object SerialNumber, SMBIOSBIOSVersion # Obtain the computer S/N and BIOS version
 
-$processorInfo = Get-CimInstance Win32_Processor | Select-Object Name, MaxClockSpeed, NumberOfCores # Obtain CPU name, max clock speed, Number of cores
+$processorInfo = Get-CimInstance Win32_Processor | Select-Object Name, MaxClockSpeed, NumberOfCores, L2CacheSize, L3CacheSize, ThreadCount, AddressWidth, SocketDesignation, VirtualizationFirmwareEnabled # Obtain CPU name, max clock speed, Number of cores
 
 $gpuInfo = Get-CimInstance Win32_VideoController | Where-Object { ($_.Name -notlike '*virtual*') -and $_.DriverVersion -and $_.DriverDate } # Obtain GPU info
 
@@ -168,7 +168,13 @@ $combinedData = [PSCustomObject]@{
     "Computer Name"        = $osInfo.CSName
     "CPU"                  = $processorInfo.Name
     "Number Of Cores"      = $processorInfo.NumberOfCores
+    "Number Of Threads"    = $processorInfo.ThreadCount
     "Frequency"            = ($processorInfo.MaxClockSpeed / 1000).ToString() + " GHz"
+    "L2 Cache Size"        = [math]::Round($processorInfo.L2CacheSize /1024, 1).ToString() + " MB"
+    "L3 Cache Size"        = [math]::Round($processorInfo.L3CacheSize /1024, 1).ToString() + " MB"
+    "Architecture"         = $processorInfo.AddressWidth.ToString() + " bits"
+    "Socket"               = $processorInfo.SocketDesignation
+    "Virtualization"       = if($processorInfo.VirtualizationFirmwareEnabled -match "True") {"On"} else {"Off"}
     "GPU"                  = ($gpuInfo | ForEach-Object { $_.Name }) -join ', '
     "GPU VRAM"             = ($gpuVRAM.ToString() + " GB") -join ', '
     "GPU Driver Version"   = ($gpuInfo | ForEach-Object { $_.DriverVersion }) -join ', '
@@ -187,7 +193,7 @@ $combinedData = [PSCustomObject]@{
     "Network Drives"       = ($networkDrive | ForEach-Object { $_.LocalName + $_.RemoteName }) -join ', '
     "OS"                   = $osInfo.Caption
     "Version"              = $osInfo.Version
-    "Architecture"         = $osInfo.OSArchitecture
+    "System Architecture"  = $osInfo.OSArchitecture
     "Domain"               = $systemInfo.Domain
     "IP Address"           = ($networkConf | ForEach-Object { $_.IPAddress }) -join ', '
     "MAC Address"          = ($networkConf | ForEach-Object { $_.MACAddress }) -join ', '
