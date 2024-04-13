@@ -3,7 +3,7 @@
 |  _ \ _____      _____ _ __ / \  _   _  __| (_) |_ 
 | |_) / _ \ \ /\ / / _ \ '__/ _ \| | | |/ _` | | __|
 |  __/ (_) \ V  V /  __/ | / ___ \ |_| | (_| | | |_ 
-|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.7.0
+|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.7.1
 
 
 "@
@@ -161,27 +161,27 @@ Show-CustomProgressBar -CurrentStep 14 -TotalSteps $TotalSteps
 $combinedData = [PSCustomObject]@{
     "Username"             = $userName
     "Administrator"        = if ($adminGroupMembers -match $userName) { "Yes" } else { "No" }
-    "Model"                = $systemInfo.Model
-    "Manufacturer"         = $systemInfo.Manufacturer
-    "S/N"                  = $biosInfo.SerialNumber
-    "BIOS Version"         = $biosInfo.SMBIOSBIOSVersion
+    "Computer Model"       = $systemInfo.Model
+    "Computer Manufacturer"= $systemInfo.Manufacturer
+    "Computer S/N"         = $biosInfo.SerialNumber
     "Computer Name"        = $osInfo.CSName
+    "BIOS Version"         = $biosInfo.SMBIOSBIOSVersion
     "CPU"                  = $processorInfo.Name
-    "Number Of Cores"      = $processorInfo.NumberOfCores
-    "Number Of Threads"    = $processorInfo.ThreadCount
-    "Frequency"            = ($processorInfo.MaxClockSpeed / 1000).ToString() + " GHz"
-    "L2 Cache Size"        = [math]::Round($processorInfo.L2CacheSize /1024, 1).ToString() + " MB"
-    "L3 Cache Size"        = [math]::Round($processorInfo.L3CacheSize /1024, 1).ToString() + " MB"
-    "Architecture"         = $processorInfo.AddressWidth.ToString() + " bits"
-    "Socket"               = $processorInfo.SocketDesignation
-    "Virtualization"       = if($processorInfo.VirtualizationFirmwareEnabled -match "True") {"On"} else {"Off"}
+    "CPU Cores"            = $processorInfo.NumberOfCores
+    "CPU Threads"          = $processorInfo.ThreadCount
+    "CPU Frequency"        = ($processorInfo.MaxClockSpeed / 1000).ToString() + " GHz"
+    "CPU L2 Cache Size"    = [math]::Round($processorInfo.L2CacheSize /1024, 1).ToString() + " MB"
+    "CPU L3 Cache Size"    = [math]::Round($processorInfo.L3CacheSize /1024, 1).ToString() + " MB"
+    "CPU Architecture"     = $processorInfo.AddressWidth.ToString() + " bits"
+    "CPU Socket"           = $processorInfo.SocketDesignation
+    "CPU Virtualization"   = if($processorInfo.VirtualizationFirmwareEnabled -match "True") {"On"} else {"Off"}
     "GPU"                  = ($gpuInfo | ForEach-Object { $_.Name }) -join ', '
     "GPU VRAM"             = ($gpuVRAM.ToString() + " GB") -join ', '
     "GPU Driver Version"   = ($gpuInfo | ForEach-Object { $_.DriverVersion }) -join ', '
     "GPU Driver Date"      = ($gpuInfo | ForEach-Object { $_.DriverDate.ToShortDateString() }) -join ', '
     "RAM Manufacturer"     = ($ramInfo | ForEach-Object { $_.Manufacturer }) -join ', '
     "Total RAM Amount"     = [math]::Ceiling([math]::Round($systemInfo.TotalPhysicalMemory / 1GB, 2)).ToString() + " GB"
-    "RAM Speed"            = ($ramInfo | ForEach-Object { $_.Speed.ToString() + " MHz" }) -join ', '
+    "RAM Frequency"        = ($ramInfo | ForEach-Object { $_.Speed.ToString() + " MHz" }) -join ', '
     "RAM Channel"          = ($ramInfo | ForEach-Object { $_.Banklabel }) -join ', '
     "RAM Slot"             = ($ramInfo | ForEach-Object { $_.DeviceLocator }) -join ','
     "Total Disk Space"     = [math]::Round(($totalSpace | Measure-Object -Property Size -Sum).Sum / 1GB, 2).ToString() + " GB"
@@ -192,8 +192,8 @@ $combinedData = [PSCustomObject]@{
     "Disks Partitions"     = ($diskInfo | ForEach-Object { $_.PartitionStyle }) -join ', '
     "Network Drives"       = ($networkDrive | ForEach-Object { $_.LocalName + $_.RemoteName }) -join ', '
     "OS"                   = $osInfo.Caption
-    "Version"              = $osInfo.Version
-    "System Architecture"  = $osInfo.OSArchitecture
+    "OS Version"           = $osInfo.Version
+    "OS Architecture"      = $osInfo.OSArchitecture
     "Domain"               = $systemInfo.Domain
     "IP Address"           = ($networkConf | ForEach-Object { $_.IPAddress }) -join ', '
     "MAC Address"          = ($networkConf | ForEach-Object { $_.MACAddress }) -join ', '
@@ -206,7 +206,7 @@ $combinedData = [PSCustomObject]@{
     "Other Antivirus"      = ($antivirus | Where-Object { $_.productState -notlike '*266*' } |ForEach-Object {$_.DisplayName}) -join ', '
     "Office Version"       = if ($office) { $office -join ', '} else { "No" }
     "System Install Date"  = ((Get-Date 01.01.1970) + ([System.TimeSpan]::fromseconds($initialInstallDate))).ToString("yyyy-MM-dd")
-    "Scan date"            = $currentDate
+    "Scan Date"            = $currentDate
     "Scan ID"              = $scanID
 }
 
