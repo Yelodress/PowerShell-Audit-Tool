@@ -61,6 +61,8 @@ If you're facing issues with this script, tell me [here](https://github.com/Yelo
 - VRAM
 - Drivers version
 - Drivers release date
+- Cuda enabled
+- Cuda cores (an estimate)
 #### <img src="https://api.iconify.design/clarity:memory-solid.svg?color=%23cdd6f4" height="15"  alt=""> RAM
 - RAM Manufacturer
 - Total RAM amount
