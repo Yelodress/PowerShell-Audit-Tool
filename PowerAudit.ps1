@@ -3,14 +3,14 @@
 |  _ \ _____      _____ _ __ / \  _   _  __| (_) |_ 
 | |_) / _ \ \ /\ / / _ \ '__/ _ \| | | |/ _` | | __|
 |  __/ (_) \ V  V /  __/ | / ___ \ |_| | (_| | | |_ 
-|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.6.4
+|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.7.1
 
 
 "@
 
 #-------------------------------------------- Progress-bar definition ---------------------------------------------
 
-$TotalSteps = 13 
+$TotalSteps = 15 
 
 function Show-CustomProgressBar {
     param(
@@ -20,7 +20,7 @@ function Show-CustomProgressBar {
     )
     $ProgressWidth = 50
     $Progress = "o" * ($CurrentStep * $ProgressWidth / $TotalSteps)
-    Write-Host "`r[$Progress".PadRight($ProgressWidth) "] $CurrentStep/13 $StepName           " -NoNewline
+    Write-Host "`r[$Progress".PadRight($ProgressWidth) "] $CurrentStep/15 $StepName           " -NoNewline
     if ($CurrentStep -eq $TotalSteps) {
         Write-Host ""
     }
@@ -48,7 +48,7 @@ $systemInfo = Get-CimInstance Win32_ComputerSystem | Select-Object Manufacturer,
 
 $biosInfo = Get-CimInstance Win32_BIOS | Select-Object SerialNumber, SMBIOSBIOSVersion # Obtain the computer S/N and BIOS version
 
-$processorInfo = Get-CimInstance Win32_Processor | Select-Object Name, MaxClockSpeed, NumberOfCores # Obtain CPU name, max clock speed, Number of cores
+$processorInfo = Get-CimInstance Win32_Processor | Select-Object Name, MaxClockSpeed, NumberOfCores, L2CacheSize, L3CacheSize, ThreadCount, AddressWidth, SocketDesignation, VirtualizationFirmwareEnabled # Obtain CPU name, max clock speed, Number of cores
 
 $gpuInfo = Get-CimInstance Win32_VideoController | Where-Object { ($_.Name -notlike '*virtual*') -and $_.DriverVersion -and $_.DriverDate } # Obtain GPU info
 
@@ -68,9 +68,15 @@ $totalSpace = Get-Volume | Where-Object { $_.DriveType -ne 'Removable' -and $_.D
 
 $diskID = Get-CimInstance Win32_LogicalDisk | Where-Object { $_.ProviderName -notlike '*\\*'}| Select-Object DeviceID # Get the disk letter
 
+#------------------------------------------------- Network drive --------------------------------------------------
+$stepName = "Retrieving network drives"
+Show-CustomProgressBar -CurrentStep 4 -TotalSteps $TotalSteps
+
+$networkDrive = Get-CimInstance Win32_NetworkConnection
+
 #---------------------------------------------- System informations -----------------------------------------------
 $stepName = "Getting system informations"
-Show-CustomProgressBar -CurrentStep 4 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 5 -TotalSteps $TotalSteps
 
 $osInfo = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, OSArchitecture, CSName # Obtain OS informations
 
@@ -78,19 +84,19 @@ $initialInstallDate = Get-ItemProperty 'HKLM:\Software\Microsoft\Windows NT\Curr
 
 #---------------------------------------------- Network informations -----------------------------------------------
 $stepName = "Getting network informations"
-Show-CustomProgressBar -CurrentStep 5 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 6 -TotalSteps $TotalSteps
 
-$networkConf = Get-CimInstance Win32_NetworkAdapterConfiguration -Filter "IPEnabled = TRUE" # Obtain infos about network cards that have an IP address
+$networkConf = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object {$_.Caption -notlike "*virtual*" -and $_.Caption -notlike "*WAN*"  -and $_.Caption -notlike "*bluetooth*" -and $_.MACAddress -ne $null} # Obtain infos about network cards that have an IP address
 
 #---------------------------------------------- Printers informations -----------------------------------------------
 $stepName = "Getting printers informations"
-Show-CustomProgressBar -CurrentStep 6 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 7 -TotalSteps $TotalSteps
 
 $printers = Get-CimInstance Win32_Printer | Where-Object { $_.Name -notlike '*OneNote*' -and $_.Name -notlike '*Microsoft*' } # Obtain all printers name except OneNote and Microsoft Printer
 
 #---------------------------------------------- Bitlocker encryption check -----------------------------------------------
 $stepName = "Checking bitlocker encryption"
-Show-CustomProgressBar -CurrentStep 7 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 8 -TotalSteps $TotalSteps
 function valueCompare ($isEncrypted) {
 
     if ($isEncrypted -eq 2) {
@@ -115,13 +121,13 @@ foreach($letter in $diskID){
 
 #---------------------------------------------- Listing programs -----------------------------------------------
 $stepName = "Listing all programs"
-Show-CustomProgressBar -CurrentStep 8 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 9 -TotalSteps $TotalSteps
 
 $appsList = Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*, HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*, HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* # Registery key
 
 #---------------------------------------------- Scan informations-----------------------------------------------
 $stepName = "Generating scan informations"
-Show-CustomProgressBar -CurrentStep 9 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 10 -TotalSteps $TotalSteps
 
 $currentDate = Get-Date -Format "yyyy-MM-dd" # Obtain the date
 $scanID = [Guid]::NewGuid().ToString("N").Substring(0, 8)  # Taking first 8 characters
@@ -129,68 +135,84 @@ $scanID = [Guid]::NewGuid().ToString("N").Substring(0, 8)  # Taking first 8 char
 #---------------------------------------------- Searching for Office app -----------------------------------------------
 
 $stepName = "Searching for Office"
-Show-CustomProgressBar -CurrentStep 10 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 11 -TotalSteps $TotalSteps
 
-$office = ($appsList | Where-Object { ($_.DisplayName -like "*365*" -or $_.DisplayName -like "*Microsoft Office Standard*" -or $_.DisplayName -like "*Microsoft Office Pro*") -and $_.Displayname -notlike "*Microsoft Teams*" } | Select-Object -ExpandProperty DisplayName -First 1) -replace '^Microsoft ', '' -replace ' -.*$' # $office take the app name found 
+$office = ($appsList | Where-Object { $_.DisplayName -like "*365*" -or $_.DisplayName -like "*Microsoft Office Standard*" -or $_.DisplayName -like "*Microsoft Office Pro*" -or $_.DisplayName -like "*Microsoft Office Fam*" -or $_.DisplayName -like "*Microsoft Office Ent*" -or $_.DisplayName -like "*Microsoft Office Home*" } | Select-Object -ExpandProperty DisplayName -First 1) -replace '^Microsoft ', '' -replace ' -.*$' # $office take the app name found 
 
 #---------------------------------------------- Checking if current user is admin -----------------------------------------------
 $stepName = "Checking your role"
-Show-CustomProgressBar -CurrentStep 11 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 12 -TotalSteps $TotalSteps
 
 $administratorsGroupName = (New-Object Security.Principal.SecurityIdentifier("S-1-5-32-544")).Translate([Security.Principal.NTAccount]).Value # Identifying Administrator group by his SID (to prevent langage change)
 $administratorsGroupName = $administratorsGroupName.Split('\')[-1] # Cut it before the backslash
 $adminGroupMembers = net localgroup "$administratorsGroupName" # Checking all usernames in this admin group
 $userName = $systemInfo.UserName.Split('\')[-1] # Cutting current username before the backslash
 
+#------------------------------------------------- Getting antivirus --------------------------------------------------
+$stepName = "Checking your antivirus"
+Show-CustomProgressBar -CurrentStep 13 -TotalSteps $TotalSteps
+
+$antivirus = Get-CimInstance -Namespace "ROOT\SecurityCenter2" -ClassName AntivirusProduct 
+
 #------------------------------------------------- Creating global tab --------------------------------------------------
 $stepName = "Generating tab"
-Show-CustomProgressBar -CurrentStep 12 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 14 -TotalSteps $TotalSteps
 
 $combinedData = [PSCustomObject]@{
     "Username"             = $userName
     "Administrator"        = if ($adminGroupMembers -match $userName) { "Yes" } else { "No" }
-    "Model"                = $systemInfo.Model
-    "Manufacturer"         = $systemInfo.Manufacturer
-    "S/N"                  = $biosInfo.SerialNumber
+    "Computer Model"       = $systemInfo.Model
+    "Computer Manufacturer"= $systemInfo.Manufacturer
+    "Computer S/N"         = $biosInfo.SerialNumber
+    "Computer Name"        = $osInfo.CSName
     "BIOS Version"         = $biosInfo.SMBIOSBIOSVersion
-    "Computer name"        = $osInfo.CSName
     "CPU"                  = $processorInfo.Name
-    "Number of cores"      = $processorInfo.NumberOfCores
-    "Frequency"            = ($processorInfo.MaxClockSpeed / 1000).ToString() + " GHz"
+    "CPU Cores"            = $processorInfo.NumberOfCores
+    "CPU Threads"          = $processorInfo.ThreadCount
+    "CPU Frequency"        = ($processorInfo.MaxClockSpeed / 1000).ToString() + " GHz"
+    "CPU L2 Cache Size"    = [math]::Round($processorInfo.L2CacheSize /1024, 1).ToString() + " MB"
+    "CPU L3 Cache Size"    = [math]::Round($processorInfo.L3CacheSize /1024, 1).ToString() + " MB"
+    "CPU Architecture"     = $processorInfo.AddressWidth.ToString() + " bits"
+    "CPU Socket"           = $processorInfo.SocketDesignation
+    "CPU Virtualization"   = if($processorInfo.VirtualizationFirmwareEnabled -match "True") {"On"} else {"Off"}
     "GPU"                  = ($gpuInfo | ForEach-Object { $_.Name }) -join ', '
     "GPU VRAM"             = ($gpuVRAM.ToString() + " GB") -join ', '
-    "GPU driver version"   = ($gpuInfo | ForEach-Object { $_.DriverVersion }) -join ', '
-    "GPU Driver date"      = ($gpuInfo | ForEach-Object { $_.DriverDate.ToShortDateString() }) -join ', '
-    "RAM manufacturer"     = ($ramInfo | ForEach-Object { $_.Manufacturer }) -join ', '
-    "Total RAM amount"     = [math]::Ceiling([math]::Round($systemInfo.TotalPhysicalMemory / 1GB, 2)).ToString() + " GB"
-    "RAM speed"            = ($ramInfo | ForEach-Object { $_.Speed.ToString() + " MHz" }) -join ', '
+    "GPU Driver Version"   = ($gpuInfo | ForEach-Object { $_.DriverVersion }) -join ', '
+    "GPU Driver Date"      = ($gpuInfo | ForEach-Object { $_.DriverDate.ToShortDateString() }) -join ', '
+    "RAM Manufacturer"     = ($ramInfo | ForEach-Object { $_.Manufacturer }) -join ', '
+    "Total RAM Amount"     = [math]::Ceiling([math]::Round($systemInfo.TotalPhysicalMemory / 1GB, 2)).ToString() + " GB"
+    "RAM Frequency"        = ($ramInfo | ForEach-Object { $_.Speed.ToString() + " MHz" }) -join ', '
     "RAM Channel"          = ($ramInfo | ForEach-Object { $_.Banklabel }) -join ', '
     "RAM Slot"             = ($ramInfo | ForEach-Object { $_.DeviceLocator }) -join ','
-    "Total disk space"     = [math]::Round(($totalSpace | Measure-Object -Property Size -Sum).Sum / 1GB, 2).ToString() + " GB"
-    "Total free space"     = [math]::Round(($totalSpace | Measure-Object -Property SizeRemaining -Sum).Sum / 1GB, 2).ToString() + " GB" 
-    "Disks type"           = ($physicalDisksInfo | ForEach-Object { $_.MediaType }) -join ', '
-    "Disks model"          = ($physicalDisksInfo | ForEach-Object { $_.Model }) -join ', '
-    "Disks health"         = ($diskInfo | ForEach-Object { $_.HealthStatus }) -join ', '
-    "Disks partitions"     = ($diskInfo | ForEach-Object { $_.PartitionStyle }) -join ', '
+    "Total Disk Space"     = [math]::Round(($totalSpace | Measure-Object -Property Size -Sum).Sum / 1GB, 2).ToString() + " GB"
+    "Total Free Space"     = [math]::Round(($totalSpace | Measure-Object -Property SizeRemaining -Sum).Sum / 1GB, 2).ToString() + " GB" 
+    "Disks Type"           = ($physicalDisksInfo | ForEach-Object { $_.MediaType }) -join ', '
+    "Disks Model"          = ($physicalDisksInfo | ForEach-Object { $_.Model }) -join ', '
+    "Disks Health"         = ($diskInfo | ForEach-Object { $_.HealthStatus }) -join ', '
+    "Disks Partitions"     = ($diskInfo | ForEach-Object { $_.PartitionStyle }) -join ', '
+    "Network Drives"       = ($networkDrive | ForEach-Object { $_.LocalName + $_.RemoteName }) -join ', '
     "OS"                   = $osInfo.Caption
-    "Version"              = $osInfo.Version
-    "Architecture"         = $osInfo.OSArchitecture
+    "OS Version"           = $osInfo.Version
+    "OS Architecture"      = $osInfo.OSArchitecture
     "Domain"               = $systemInfo.Domain
     "IP Address"           = ($networkConf | ForEach-Object { $_.IPAddress }) -join ', '
+    "MAC Address"          = ($networkConf | ForEach-Object { $_.MACAddress }) -join ', '
     "Gateway"              = ($networkConf | ForEach-Object { $_.DefaultIPGateway }) -join ', '
     "DNS"                  = ($networkConf | ForEach-Object { $_.DNSServerSearchOrder }) -join ', '
     "DHCP"                 = ($networkConf | ForEach-Object { if ($_.DHCPEnabled) { "Yes" } else { "No" } }) -join ', '
     "Printers"             = ($printers | ForEach-Object { $_.Name }) -join ', '
-    "Bitlocker encryption" = (ForEach-Object {$isEncrypted}) -join ', '
+    "Bitlocker Encryption" = (ForEach-Object {$isEncrypted}) -join ', '
+    "Active Antivirus"     = ($antivirus | Where-Object { $_.productState -notlike '*393*' -and $_.productState -notlike '0' } |ForEach-Object {$_.DisplayName}) -join ', '
+    "Other Antivirus"      = ($antivirus | Where-Object { $_.productState -notlike '*266*' } |ForEach-Object {$_.DisplayName}) -join ', '
     "Office Version"       = if ($office) { $office -join ', '} else { "No" }
-    "Initial install date" = ((Get-Date 01.01.1970) + ([System.TimeSpan]::fromseconds($initialInstallDate))).ToString("yyyy-MM-dd")
-    "Scan date"            = $currentDate
+    "System Install Date"  = ((Get-Date 01.01.1970) + ([System.TimeSpan]::fromseconds($initialInstallDate))).ToString("yyyy-MM-dd")
+    "Scan Date"            = $currentDate
     "Scan ID"              = $scanID
 }
 
 #----------------------------------------------- Exporting all CSV files ------------------------------------------------
 $stepName = "Exporting files"
-Show-CustomProgressBar -CurrentStep 13 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 15 -TotalSteps $TotalSteps
 
 $fileName = "results"
 $fileName2 = $systemInfo.UserName.Split('\')[-1] + "-" + $scanID
