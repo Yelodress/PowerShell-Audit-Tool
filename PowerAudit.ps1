@@ -1,4 +1,4 @@
-@"
+﻿@"
  ____                         _             _ _ _   
 |  _ \ _____      _____ _ __ / \  _   _  __| (_) |_ 
 | |_) / _ \ \ /\ / / _ \ '__/ _ \| | | |/ _` | | __|
@@ -50,11 +50,61 @@ $biosInfo = Get-CimInstance Win32_BIOS | Select-Object SerialNumber, SMBIOSBIOSV
 
 $processorInfo = Get-CimInstance Win32_Processor | Select-Object Name, MaxClockSpeed, NumberOfCores, L2CacheSize, L3CacheSize, ThreadCount, AddressWidth, SocketDesignation, VirtualizationFirmwareEnabled # Obtain CPU name, max clock speed, Number of cores
 
-$gpuInfo = Get-CimInstance Win32_VideoController | Where-Object { ($_.Name -notlike '*virtual*') -and $_.DriverVersion -and $_.DriverDate } # Obtain GPU info
-
 $gpuVRAM = [math]::round((Get-ItemProperty -Path "HKLM:\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0*" -Name HardwareInformation.qwMemorySize -ErrorAction SilentlyContinue)."HardwareInformation.qwMemorySize"/1GB)
 
 $ramInfo = Get-CimInstance Win32_PhysicalMemory | Select-Object Manufacturer, Banklabel, DeviceLocator, Speed  # Obtain RAM info
+
+#---------------------------------------------- Gpus informations ------------------------------------------------
+
+$gpuInfo = Get-CimInstance Win32_VideoController | Where-Object { ($_.Name -notlike '*virtual*') -and $_.DriverVersion -and $_.DriverDate } # Obtain GPU info
+
+# Exécuter nvidia-smi pour obtenir le modèle du GPU et la version de CUDA
+$gpuModel = & "nvidia-smi.exe" --query-gpu=name --format=csv,noheader
+# Définir le nombre de coeurs CUDA par multiprocesseur pour la série RTX 40
+$cudaCoresPerSM = 128
+
+# Tableau associatif des modèles de GPU et nombre de multiprocesseurs pour les séries RTX 40, 30 et 20
+$gpuSMs = @{
+    # Série RTX 40
+    "NVIDIA GeForce RTX 4060 Laptop GPU" = 24
+    "NVIDIA GeForce RTX 4060" = 28
+    "NVIDIA GeForce RTX 4060 Ti" = 34
+    "NVIDIA GeForce RTX 4070" = 36
+    "NVIDIA GeForce RTX 4070 Ti" = 60
+    "NVIDIA GeForce RTX 4080" = 76
+    "NVIDIA GeForce RTX 4090" = 128
+
+    # Série RTX 30
+    "NVIDIA GeForce RTX 3050" = 20
+    "NVIDIA GeForce RTX 3060" = 28
+    "NVIDIA GeForce RTX 3060 Ti" = 38
+    "NVIDIA GeForce RTX 3070" = 46
+    "NVIDIA GeForce RTX 3070 Ti" = 48
+    "NVIDIA GeForce RTX 3080" = 68
+    "NVIDIA GeForce RTX 3080 Ti" = 80
+    "NVIDIA GeForce RTX 3090" = 82
+    "NVIDIA GeForce RTX 3090 Ti" = 84
+
+    # Série RTX 20
+    "NVIDIA GeForce RTX 2060" = 30
+    "NVIDIA GeForce RTX 2060 Super" = 34
+    "NVIDIA GeForce RTX 2070" = 36
+    "NVIDIA GeForce RTX 2070 Super" = 40
+    "NVIDIA GeForce RTX 2080" = 46
+    "NVIDIA GeForce RTX 2080 Super" = 48
+    "NVIDIA GeForce RTX 2080 Ti" = 68
+}
+
+# Vérifier si le modèle est dans la liste et calculer le nombre de coeurs CUDA
+$gpuModel = $gpuModel.Trim()
+if ($gpuSMs.ContainsKey($gpuModel)) {
+    $numberOfSMs = $gpuSMs[$gpuModel]
+    $totalCudaCores = $cudaCoresPerSM * $numberOfSMs
+}
+
+# Calcul des valeurs conditionnelles pour les cœurs CUDA et l'activation de CUDA
+$gpuCudaCoresValue = if ($totalCudaCores) { $totalCudaCores } else { "N/A" }
+$gpuCudaEnabled = if ($totalCudaCores) { "Yes" } else { "No" }
 
 #---------------------------------------------- Disks informations -----------------------------------------------
 $stepName = "Getting disks informations"
@@ -179,6 +229,8 @@ $combinedData = [PSCustomObject]@{
     "GPU VRAM"             = ($gpuVRAM.ToString() + " GB") -join ', '
     "GPU Driver Version"   = ($gpuInfo | ForEach-Object { $_.DriverVersion }) -join ', '
     "GPU Driver Date"      = ($gpuInfo | ForEach-Object { $_.DriverDate.ToShortDateString() }) -join ', '
+    "GPU CUDA Cores"       = $gpuCudaCoresValue
+    "GPU Cuda Enabled"     = $gpuCudaEnabled
     "RAM Manufacturer"     = ($ramInfo | ForEach-Object { $_.Manufacturer }) -join ', '
     "Total RAM Amount"     = [math]::Ceiling([math]::Round($systemInfo.TotalPhysicalMemory / 1GB, 2)).ToString() + " GB"
     "RAM Frequency"        = ($ramInfo | ForEach-Object { $_.Speed.ToString() + " MHz" }) -join ', '
