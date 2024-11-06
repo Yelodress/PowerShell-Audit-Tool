@@ -44,105 +44,199 @@ if (![System.IO.Directory]::Exists($outputFolderName)) {
 $stepName = "Getting hardware informations"
 Show-CustomProgressBar -CurrentStep 2 -TotalSteps $TotalSteps
 
-$systemInfo = Get-CimInstance Win32_ComputerSystem | Select-Object Manufacturer, Model, TotalPhysicalMemory, Domain, UserName # Obtain PC specs
+try {
+    $systemInfo = Get-CimInstance Win32_ComputerSystem | Select-Object Manufacturer, Model, TotalPhysicalMemory, Domain, UserName # Obtain PC specs
+    $biosInfo = Get-CimInstance Win32_BIOS | Select-Object SerialNumber, SMBIOSBIOSVersion # Obtain the computer S/N and BIOS version
+    $processorInfo = Get-CimInstance Win32_Processor | Select-Object Name, MaxClockSpeed, NumberOfCores, L2CacheSize, L3CacheSize, ThreadCount, AddressWidth, SocketDesignation, VirtualizationFirmwareEnabled # Obtain CPU name, max clock speed, Number of cores
+    $gpuVRAM = [math]::round((Get-ItemProperty -Path "HKLM:\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0*" -Name HardwareInformation.qwMemorySize -ErrorAction SilentlyContinue)."HardwareInformation.qwMemorySize"/1GB)
+    $ramInfo = Get-CimInstance Win32_PhysicalMemory | Select-Object Manufacturer, Banklabel, DeviceLocator, Speed  # Obtain RAM info
+} catch {
+    $systemInfo = [PSCustomObject]@{
+        Manufacturer = "N/A"
+        Model = "N/A"
+        TotalPhysicalMemory = "N/A"
+        Domain = "N/A"
+        UserName = "N/A"
+    }
+    $biosInfo = [PSCustomObject]@{
+        SerialNumber = "N/A"
+        SMBIOSBIOSVersion = "N/A"
+    }
+    $processorInfo = [PSCustomObject]@{
+        Name = "N/A"
+        MaxClockSpeed = "N/A"
+        NumberOfCores = "N/A"
+        L2CacheSize = "N/A"
+        L3CacheSize = "N/A"
+        ThreadCount = "N/A"
+        AddressWidth = "N/A"
+        SocketDesignation = "N/A"
+        VirtualizationFirmwareEnabled = "N/A"
+    }
+    $gpuVRAM = "N/A"
+    $ramInfo = @([PSCustomObject]@{
+        Manufacturer = "N/A"
+        Banklabel = "N/A"
+        DeviceLocator = "N/A"
+        Speed = "N/A"
+    })
 
-$biosInfo = Get-CimInstance Win32_BIOS | Select-Object SerialNumber, SMBIOSBIOSVersion # Obtain the computer S/N and BIOS version
+    # Gestion des valeurs de RAM
+    $ramFrequency = if ($ramInfo -and $ramInfo.Count -gt 0) {
+        ($ramInfo | ForEach-Object { $_.Speed.ToString() + " MHz" }) -join ', '
+    } else {
+        "N/A"
+    }
 
-$processorInfo = Get-CimInstance Win32_Processor | Select-Object Name, MaxClockSpeed, NumberOfCores, L2CacheSize, L3CacheSize, ThreadCount, AddressWidth, SocketDesignation, VirtualizationFirmwareEnabled # Obtain CPU name, max clock speed, Number of cores
-
-$gpuVRAM = [math]::round((Get-ItemProperty -Path "HKLM:\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0*" -Name HardwareInformation.qwMemorySize -ErrorAction SilentlyContinue)."HardwareInformation.qwMemorySize"/1GB)
-
-$ramInfo = Get-CimInstance Win32_PhysicalMemory | Select-Object Manufacturer, Banklabel, DeviceLocator, Speed  # Obtain RAM info
+    # Gestion des noms d'utilisateur pour l'exportation des fichiers
+    $fileName2 = if ($systemInfo -and $systemInfo.UserName) {
+        $systemInfo.UserName.Split('\')[-1] + "-" + $scanID
+    } else {
+        "UnknownUser-" + $scanID
+    }
+}
 
 #---------------------------------------------- Gpus informations ------------------------------------------------
 
 $gpuInfo = Get-CimInstance Win32_VideoController | Where-Object { ($_.Name -notlike '*virtual*') -and $_.DriverVersion -and $_.DriverDate } # Obtain GPU info
 
-# Exécuter nvidia-smi pour obtenir le modèle du GPU et la version de CUDA
-$gpuModel = & "nvidia-smi.exe" --query-gpu=name --format=csv,noheader
-# Définir le nombre de coeurs CUDA par multiprocesseur pour la série RTX 40
-$cudaCoresPerSM = 128
+try {
+    # Exécuter nvidia-smi pour obtenir le modèle du GPU et la version de CUDA
+    $gpuModel = & "nvidia-smi.exe" --query-gpu=name --format=csv,noheader
+    # Définir le nombre de coeurs CUDA par multiprocesseur pour la série RTX 40
+    $cudaCoresPerSM = 128
 
-# Tableau associatif des modèles de GPU et nombre de multiprocesseurs pour les séries RTX 40, 30 et 20
-$gpuSMs = @{
-    # Série RTX 40
-    "NVIDIA GeForce RTX 4060 Laptop GPU" = 24
-    "NVIDIA GeForce RTX 4060" = 28
-    "NVIDIA GeForce RTX 4060 Ti" = 34
-    "NVIDIA GeForce RTX 4070" = 36
-    "NVIDIA GeForce RTX 4070 Ti" = 60
-    "NVIDIA GeForce RTX 4080" = 76
-    "NVIDIA GeForce RTX 4090" = 128
+    # Tableau associatif des modèles de GPU et nombre de multiprocesseurs pour les séries RTX 40, 30 et 20
+    $gpuSMs = @{
+        # Série RTX 40
+        "NVIDIA GeForce RTX 4060 Laptop GPU" = 24
+        "NVIDIA GeForce RTX 4060" = 28
+        "NVIDIA GeForce RTX 4060 Ti" = 34
+        "NVIDIA GeForce RTX 4070" = 36
+        "NVIDIA GeForce RTX 4070 Ti" = 60
+        "NVIDIA GeForce RTX 4080" = 76
+        "NVIDIA GeForce RTX 4090" = 128
 
-    # Série RTX 30
-    "NVIDIA GeForce RTX 3050" = 20
-    "NVIDIA GeForce RTX 3060" = 28
-    "NVIDIA GeForce RTX 3060 Ti" = 38
-    "NVIDIA GeForce RTX 3070" = 46
-    "NVIDIA GeForce RTX 3070 Ti" = 48
-    "NVIDIA GeForce RTX 3080" = 68
-    "NVIDIA GeForce RTX 3080 Ti" = 80
-    "NVIDIA GeForce RTX 3090" = 82
-    "NVIDIA GeForce RTX 3090 Ti" = 84
+        # Série RTX 30
+        "NVIDIA GeForce RTX 3050" = 20
+        "NVIDIA GeForce RTX 3060" = 28
+        "NVIDIA GeForce RTX 3060 Ti" = 38
+        "NVIDIA GeForce RTX 3070" = 46
+        "NVIDIA GeForce RTX 3070 Ti" = 48
+        "NVIDIA GeForce RTX 3080" = 68
+        "NVIDIA GeForce RTX 3080 Ti" = 80
+        "NVIDIA GeForce RTX 3090" = 82
+        "NVIDIA GeForce RTX 3090 Ti" = 84
 
-    # Série RTX 20
-    "NVIDIA GeForce RTX 2060" = 30
-    "NVIDIA GeForce RTX 2060 Super" = 34
-    "NVIDIA GeForce RTX 2070" = 36
-    "NVIDIA GeForce RTX 2070 Super" = 40
-    "NVIDIA GeForce RTX 2080" = 46
-    "NVIDIA GeForce RTX 2080 Super" = 48
-    "NVIDIA GeForce RTX 2080 Ti" = 68
+        # Série RTX 20
+        "NVIDIA GeForce RTX 2060" = 30
+        "NVIDIA GeForce RTX 2060 Super" = 34
+        "NVIDIA GeForce RTX 2070" = 36
+        "NVIDIA GeForce RTX 2070 Super" = 40
+        "NVIDIA GeForce RTX 2080" = 46
+        "NVIDIA GeForce RTX 2080 Super" = 48
+        "NVIDIA GeForce RTX 2080 Ti" = 68
+    }
+
+    # Vérifier si le modèle est dans la liste et calculer le nombre de coeurs CUDA
+    $gpuModel = $gpuModel.Trim()
+    if ($gpuSMs.ContainsKey($gpuModel)) {
+        $numberOfSMs = $gpuSMs[$gpuModel]
+        $totalCudaCores = $cudaCoresPerSM * $numberOfSMs
+    }
+
+    # Calcul des valeurs conditionnelles pour les cœurs CUDA et l'activation de CUDA
+    $gpuCudaCoresValue = if ($totalCudaCores) { $totalCudaCores } else { "N/A" }
+    $gpuCudaEnabled = if ($totalCudaCores) { "Yes" } else { "No" }
+} catch {
+    $gpuCudaCoresValue = "N/A"
+    $gpuCudaEnabled = "No"
 }
-
-# Vérifier si le modèle est dans la liste et calculer le nombre de coeurs CUDA
-$gpuModel = $gpuModel.Trim()
-if ($gpuSMs.ContainsKey($gpuModel)) {
-    $numberOfSMs = $gpuSMs[$gpuModel]
-    $totalCudaCores = $cudaCoresPerSM * $numberOfSMs
-}
-
-# Calcul des valeurs conditionnelles pour les cœurs CUDA et l'activation de CUDA
-$gpuCudaCoresValue = if ($totalCudaCores) { $totalCudaCores } else { "N/A" }
-$gpuCudaEnabled = if ($totalCudaCores) { "Yes" } else { "No" }
 
 #---------------------------------------------- Disks informations -----------------------------------------------
 $stepName = "Getting disks informations"
 Show-CustomProgressBar -CurrentStep 3 -TotalSteps $TotalSteps
  
-$physicalDisksInfo = Get-PhysicalDisk | Where-Object { $_.DriveType -ne 'Removable' -and $_.DriveType -ne 'CD-ROM' -and $_.BusType -ne 'USB' } #Get the disk type and his RPM (if it's HDD)
-
-$diskInfo = Get-Disk | Where-Object { $_.DriveType -ne 'Removable' -and $_.DriveType -ne 'CD-ROM' -and $_.BusType -ne 'USB' } #Get the disk informations(for health status)
-
-$totalSpace = Get-Volume | Where-Object { $_.DriveType -ne 'Removable' -and $_.DriveType -ne 'CD-ROM' -and $_.BusType -ne 'USB' }  # Get the total volume ingoring USB, Removable and CD-ROM devices
-
-$diskID = Get-CimInstance Win32_LogicalDisk | Where-Object { $_.ProviderName -notlike '*\\*'}| Select-Object DeviceID # Get the disk letter
+try {
+    $physicalDisksInfo = Get-PhysicalDisk | Where-Object { $_.DriveType -ne 'Removable' -and $_.DriveType -ne 'CD-ROM' -and $_.BusType -ne 'USB' } # Get the disk type and his RPM (if it's HDD)
+    $diskInfo = Get-Disk | Where-Object { $_.DriveType -ne 'Removable' -and $_.DriveType -ne 'CD-ROM' -and $_.BusType -ne 'USB' } # Get the disk informations(for health status)
+    $totalSpace = Get-Volume | Where-Object { $_.DriveType -ne 'Removable' -and $_.DriveType -ne 'CD-ROM' -and $_.BusType -ne 'USB' }  # Get the total volume ignoring USB, Removable and CD-ROM devices
+    $diskID = Get-CimInstance Win32_LogicalDisk | Where-Object { $_.ProviderName -notlike '*\\*'} | Select-Object DeviceID # Get the disk letter
+} catch {
+    $physicalDisksInfo = @([PSCustomObject]@{
+        MediaType = "N/A"
+    })
+    $diskInfo = @([PSCustomObject]@{
+        HealthStatus = "N/A"
+        PartitionStyle = "N/A"
+    })
+    $totalSpace = @([PSCustomObject]@{
+        Size = 0
+        SizeRemaining = 0
+    })
+    $diskID = @([PSCustomObject]@{
+        DeviceID = "N/A"
+    })
+}
 
 #------------------------------------------------- Network drive --------------------------------------------------
 $stepName = "Retrieving network drives"
 Show-CustomProgressBar -CurrentStep 4 -TotalSteps $TotalSteps
 
-$networkDrive = Get-CimInstance Win32_NetworkConnection
+try {
+    $networkDrive = Get-CimInstance Win32_NetworkConnection
+} catch {
+    $networkDrive = @([PSCustomObject]@{
+        LocalName = "N/A"
+        RemoteName = "N/A"
+    })
+}
 
 #---------------------------------------------- System informations -----------------------------------------------
 $stepName = "Getting system informations"
 Show-CustomProgressBar -CurrentStep 5 -TotalSteps $TotalSteps
 
-$osInfo = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, OSArchitecture, CSName # Obtain OS informations
-
-$initialInstallDate = Get-ItemProperty 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\' | Select-Object -ExpandProperty InstallDate # Obtain the initial OS install date in registery key
+try {
+    $osInfo = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, OSArchitecture, CSName # Obtain OS informations
+    $initialInstallDate = Get-ItemProperty 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\' | Select-Object -ExpandProperty InstallDate # Obtain the initial OS install date in registry key
+} catch {
+    $osInfo = [PSCustomObject]@{
+        Caption = "N/A"
+        Version = "N/A"
+        OSArchitecture = "N/A"
+        CSName = "N/A"
+    }
+    $initialInstallDate = "N/A"
+}
 
 #---------------------------------------------- Network informations -----------------------------------------------
 $stepName = "Getting network informations"
 Show-CustomProgressBar -CurrentStep 6 -TotalSteps $TotalSteps
 
-$networkConf = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object {$_.Caption -notlike "*virtual*" -and $_.Caption -notlike "*WAN*"  -and $_.Caption -notlike "*bluetooth*" -and $_.MACAddress -ne $null} # Obtain infos about network cards that have an IP address
+try {
+    $networkConf = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object {$_.Caption -notlike "*virtual*" -and $_.Caption -notlike "*WAN*"  -and $_.Caption -notlike "*bluetooth*" -and $_.MACAddress -ne $null} # Obtain infos about network cards that have an IP address
+} catch {
+    $networkConf = @([PSCustomObject]@{
+        IPAddress = "N/A"
+        MACAddress = "N/A"
+        DefaultIPGateway = "N/A"
+        DNSServerSearchOrder = "N/A"
+        DHCPEnabled = "N/A"
+    })
+}
 
 #---------------------------------------------- Printers informations -----------------------------------------------
 $stepName = "Getting printers informations"
 Show-CustomProgressBar -CurrentStep 7 -TotalSteps $TotalSteps
 
-$printers = Get-CimInstance Win32_Printer | Where-Object { $_.Name -notlike '*OneNote*' -and $_.Name -notlike '*Microsoft*' } # Obtain all printers name except OneNote and Microsoft Printer
+try {
+    $printers = Get-CimInstance Win32_Printer | Where-Object { $_.Name -notlike '*OneNote*' -and $_.Name -notlike '*Microsoft*' } # Obtain all printers name except OneNote and Microsoft Printer
+    if (-not $printers) {
+        $printers = @([PSCustomObject]@{ Name = "N/A" })
+    }
+} catch {
+    $printers = @([PSCustomObject]@{ Name = "N/A" })
+}
 
 #---------------------------------------------- Bitlocker encryption check -----------------------------------------------
 $stepName = "Checking bitlocker encryption"
@@ -193,10 +287,16 @@ $office = ($appsList | Where-Object { $_.DisplayName -like "*365*" -or $_.Displa
 $stepName = "Checking your role"
 Show-CustomProgressBar -CurrentStep 12 -TotalSteps $TotalSteps
 
-$administratorsGroupName = (New-Object Security.Principal.SecurityIdentifier("S-1-5-32-544")).Translate([Security.Principal.NTAccount]).Value # Identifying Administrator group by his SID (to prevent langage change)
-$administratorsGroupName = $administratorsGroupName.Split('\')[-1] # Cut it before the backslash
-$adminGroupMembers = net localgroup "$administratorsGroupName" # Checking all usernames in this admin group
-$userName = $systemInfo.UserName.Split('\')[-1] # Cutting current username before the backslash
+try {
+    $administratorsGroupName = (New-Object Security.Principal.SecurityIdentifier("S-1-5-32-544")).Translate([Security.Principal.NTAccount]).Value # Identifying Administrator group by his SID (to prevent language change)
+    $administratorsGroupName = $administratorsGroupName.Split('\')[-1] # Cut it before the backslash
+    $adminGroupMembers = net localgroup "$administratorsGroupName" # Checking all usernames in this admin group
+    $userName = $systemInfo.UserName.Split('\')[-1] # Cutting current username before the backslash
+} catch {
+    $administratorsGroupName = "N/A"
+    $adminGroupMembers = "N/A"
+    $userName = "N/A"
+}
 
 #------------------------------------------------- Getting antivirus --------------------------------------------------
 $stepName = "Checking your antivirus"
@@ -233,7 +333,7 @@ $combinedData = [PSCustomObject]@{
     "GPU Cuda Enabled"     = $gpuCudaEnabled
     "RAM Manufacturer"     = ($ramInfo | ForEach-Object { $_.Manufacturer }) -join ', '
     "Total RAM Amount"     = [math]::Ceiling([math]::Round($systemInfo.TotalPhysicalMemory / 1GB, 2)).ToString() + " GB"
-    "RAM Frequency"        = ($ramInfo | ForEach-Object { $_.Speed.ToString() + " MHz" }) -join ', '
+    "RAM Frequency"        = $ramFrequency
     "RAM Channel"          = ($ramInfo | ForEach-Object { $_.Banklabel }) -join ', '
     "RAM Slot"             = ($ramInfo | ForEach-Object { $_.DeviceLocator }) -join ','
     "Total Disk Space"     = [math]::Round(($totalSpace | Measure-Object -Property Size -Sum).Sum / 1GB, 2).ToString() + " GB"
@@ -266,8 +366,7 @@ $combinedData = [PSCustomObject]@{
 $stepName = "Exporting files"
 Show-CustomProgressBar -CurrentStep 15 -TotalSteps $TotalSteps
 
-$fileName = "results"
-$fileName2 = $systemInfo.UserName.Split('\')[-1] + "-" + $scanID
+$fileName = "$scanID-result"
 
 function menu ($choice){
     Write-Host "Choose your output format"
