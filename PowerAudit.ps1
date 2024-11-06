@@ -3,7 +3,7 @@
 |  _ \ _____      _____ _ __ / \  _   _  __| (_) |_ 
 | |_) / _ \ \ /\ / / _ \ '__/ _ \| | | |/ _` | | __|
 |  __/ (_) \ V  V /  __/ | / ___ \ |_| | (_| | | |_ 
-|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.7.1
+|_|   \___/ \_/\_/ \___|_|/_/   \_\__,_|\__,_|_|\__|v0.7.2
 
 
 "@
@@ -28,10 +28,11 @@ function Show-CustomProgressBar {
 
 #----------------------------------------------- Folder creation ------------------------------------------------
 $stepName = "Creating folders"
-Show-CustomProgressBar -CurrentStep 1 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 1 -TotalSteps $TotalSteps $stepName
 
-$appFolderName = "apps-list" #Defining the destination folder name
-$outputFolderName = "output" #Defining the destination folder name
+#Defining destination folder names
+$appFolderName = "apps-list"
+$outputFolderName = "output"
 
 if (![System.IO.Directory]::Exists($outputFolderName)) {
     #If the folder does not exists
@@ -42,7 +43,7 @@ if (![System.IO.Directory]::Exists($outputFolderName)) {
 
 #---------------------------------------------- Hardware informations -----------------------------------------------
 $stepName = "Getting hardware informations"
-Show-CustomProgressBar -CurrentStep 2 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 2 -TotalSteps $TotalSteps $stepName
 
 $systemInfo = Get-CimInstance Win32_ComputerSystem | Select-Object Manufacturer, Model, TotalPhysicalMemory, Domain, UserName # Obtain PC specs
 
@@ -50,15 +51,17 @@ $biosInfo = Get-CimInstance Win32_BIOS | Select-Object SerialNumber, SMBIOSBIOSV
 
 $processorInfo = Get-CimInstance Win32_Processor | Select-Object Name, MaxClockSpeed, NumberOfCores, L2CacheSize, L3CacheSize, ThreadCount, AddressWidth, SocketDesignation, VirtualizationFirmwareEnabled # Obtain CPU name, max clock speed, Number of cores
 
-$gpuInfo = Get-CimInstance Win32_VideoController | Where-Object { ($_.Name -notlike '*virtual*') -and $_.DriverVersion -and $_.DriverDate } # Obtain GPU info
+$gpuInfo = Get-CimInstance Win32_VideoController | Where-Object { ($_.Name -notlike '*virtual*') -and $_.DriverVersion -and $_.DriverDate } # Obtain GPU driver info
 
 $gpuVRAM = [math]::round((Get-ItemProperty -Path "HKLM:\SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0*" -Name HardwareInformation.qwMemorySize -ErrorAction SilentlyContinue)."HardwareInformation.qwMemorySize"/1GB)
 
 $ramInfo = Get-CimInstance Win32_PhysicalMemory | Select-Object Manufacturer, Banklabel, DeviceLocator, Speed  # Obtain RAM info
 
+$batteryInfo = Get-CimInstance -ClassName Win32_Battery -ErrorAction SilentlyContinue | Select-Object Status  # Obtain the battery health status
+
 #---------------------------------------------- Disks informations -----------------------------------------------
 $stepName = "Getting disks informations"
-Show-CustomProgressBar -CurrentStep 3 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 3 -TotalSteps $TotalSteps $stepName
  
 $physicalDisksInfo = Get-PhysicalDisk | Where-Object { $_.DriveType -ne 'Removable' -and $_.DriveType -ne 'CD-ROM' -and $_.BusType -ne 'USB' } #Get the disk type and his RPM (if it's HDD)
 
@@ -70,13 +73,13 @@ $diskID = Get-CimInstance Win32_LogicalDisk | Where-Object { $_.ProviderName -no
 
 #------------------------------------------------- Network drive --------------------------------------------------
 $stepName = "Retrieving network drives"
-Show-CustomProgressBar -CurrentStep 4 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 4 -TotalSteps $TotalSteps $stepName
 
 $networkDrive = Get-CimInstance Win32_NetworkConnection
 
 #---------------------------------------------- System informations -----------------------------------------------
 $stepName = "Getting system informations"
-Show-CustomProgressBar -CurrentStep 5 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 5 -TotalSteps $TotalSteps $stepName
 
 $osInfo = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, OSArchitecture, CSName # Obtain OS informations
 
@@ -84,19 +87,19 @@ $initialInstallDate = Get-ItemProperty 'HKLM:\Software\Microsoft\Windows NT\Curr
 
 #---------------------------------------------- Network informations -----------------------------------------------
 $stepName = "Getting network informations"
-Show-CustomProgressBar -CurrentStep 6 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 6 -TotalSteps $TotalSteps $stepName
 
 $networkConf = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object {$_.Caption -notlike "*virtual*" -and $_.Caption -notlike "*WAN*"  -and $_.Caption -notlike "*bluetooth*" -and $_.MACAddress -ne $null} # Obtain infos about network cards that have an IP address
 
 #---------------------------------------------- Printers informations -----------------------------------------------
 $stepName = "Getting printers informations"
-Show-CustomProgressBar -CurrentStep 7 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 7 -TotalSteps $TotalSteps $stepName
 
 $printers = Get-CimInstance Win32_Printer | Where-Object { $_.Name -notlike '*OneNote*' -and $_.Name -notlike '*Microsoft*' } # Obtain all printers name except OneNote and Microsoft Printer
 
 #---------------------------------------------- Bitlocker encryption check -----------------------------------------------
 $stepName = "Checking bitlocker encryption"
-Show-CustomProgressBar -CurrentStep 8 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 8 -TotalSteps $TotalSteps $stepName
 function valueCompare ($isEncrypted) {
 
     if ($isEncrypted -eq 2) {
@@ -121,13 +124,13 @@ foreach($letter in $diskID){
 
 #---------------------------------------------- Listing programs -----------------------------------------------
 $stepName = "Listing all programs"
-Show-CustomProgressBar -CurrentStep 9 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 9 -TotalSteps $TotalSteps $stepName
 
 $appsList = Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*, HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*, HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* # Registery key
 
 #---------------------------------------------- Scan informations-----------------------------------------------
 $stepName = "Generating scan informations"
-Show-CustomProgressBar -CurrentStep 10 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 10 -TotalSteps $TotalSteps $stepName
 
 $currentDate = Get-Date -Format "yyyy-MM-dd" # Obtain the date
 $scanID = [Guid]::NewGuid().ToString("N").Substring(0, 8)  # Taking first 8 characters
@@ -135,13 +138,13 @@ $scanID = [Guid]::NewGuid().ToString("N").Substring(0, 8)  # Taking first 8 char
 #---------------------------------------------- Searching for Office app -----------------------------------------------
 
 $stepName = "Searching for Office"
-Show-CustomProgressBar -CurrentStep 11 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 11 -TotalSteps $TotalSteps $stepName
 
-$office = ($appsList | Where-Object { $_.DisplayName -like "*365*" -or $_.DisplayName -like "*Microsoft Office Standard*" -or $_.DisplayName -like "*Microsoft Office Pro*" -or $_.DisplayName -like "*Microsoft Office Fam*" -or $_.DisplayName -like "*Microsoft Office Ent*" -or $_.DisplayName -like "*Microsoft Office Home*" } | Select-Object -ExpandProperty DisplayName -First 1) -replace '^Microsoft ', '' -replace ' -.*$' # $office take the app name found 
+$office = ($appsList | Where-Object { $_.DisplayName -like "*365*" -or $_.DisplayName -like "*Microsoft Office Standard*" -or $_.DisplayName -like "*Microsoft Office Pro*" -or $_.DisplayName -like "*Microsoft Office Fam*" -or $_.DisplayName -like "*Microsoft Office Ent*" -or $_.DisplayName -like "*Microsoft Office Home*" } -ErrorAction SilentlyContinue | Select-Object -ExpandProperty DisplayName -First 1) -replace '^Microsoft ', '' -replace ' -.*$' # $office take the app name found 
 
 #---------------------------------------------- Checking if current user is admin -----------------------------------------------
 $stepName = "Checking your role"
-Show-CustomProgressBar -CurrentStep 12 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 12 -TotalSteps $TotalSteps $stepName
 
 $administratorsGroupName = (New-Object Security.Principal.SecurityIdentifier("S-1-5-32-544")).Translate([Security.Principal.NTAccount]).Value # Identifying Administrator group by his SID (to prevent langage change)
 $administratorsGroupName = $administratorsGroupName.Split('\')[-1] # Cut it before the backslash
@@ -150,13 +153,13 @@ $userName = $systemInfo.UserName.Split('\')[-1] # Cutting current username befor
 
 #------------------------------------------------- Getting antivirus --------------------------------------------------
 $stepName = "Checking your antivirus"
-Show-CustomProgressBar -CurrentStep 13 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 13 -TotalSteps $TotalSteps $stepName
 
 $antivirus = Get-CimInstance -Namespace "ROOT\SecurityCenter2" -ClassName AntivirusProduct 
 
 #------------------------------------------------- Creating global tab --------------------------------------------------
 $stepName = "Generating tab"
-Show-CustomProgressBar -CurrentStep 14 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 14 -TotalSteps $TotalSteps $stepName
 
 $combinedData = [PSCustomObject]@{
     "Username"             = $userName
@@ -191,6 +194,7 @@ $combinedData = [PSCustomObject]@{
     "Disks Health"         = ($diskInfo | ForEach-Object { $_.HealthStatus }) -join ', '
     "Disks Partitions"     = ($diskInfo | ForEach-Object { $_.PartitionStyle }) -join ', '
     "Network Drives"       = ($networkDrive | ForEach-Object { $_.LocalName + $_.RemoteName }) -join ', '
+    "Battery Health"       = if ($batteryInfo.Status) {$batteryInfo.Status} else {"None"}
     "OS"                   = $osInfo.Caption
     "OS Version"           = $osInfo.Version
     "OS Architecture"      = $osInfo.OSArchitecture
@@ -212,12 +216,12 @@ $combinedData = [PSCustomObject]@{
 
 #----------------------------------------------- Exporting all CSV files ------------------------------------------------
 $stepName = "Exporting files"
-Show-CustomProgressBar -CurrentStep 15 -TotalSteps $TotalSteps
+Show-CustomProgressBar -CurrentStep 15 -TotalSteps $TotalSteps $stepName
 
 $fileName = "results"
 $fileName2 = $systemInfo.UserName.Split('\')[-1] + "-" + $scanID
 
-function menu ($choice){
+function conversion ($choice){
     Write-Host "Choose your output format"
     Write-Host "1: CSV"
     Write-Host "2: JSON"
@@ -225,16 +229,16 @@ function menu ($choice){
 
     if ($choice -eq 1) {
         $combinedData | Export-Csv -Path "$outputFolderName\$fileName.csv" -Delimiter ";" -Append -NoTypeinformation
-        $appsList | Select-Object DisplayName, DisplayVersion, Publisher | Where-Object { $null -ne $_.DisplayName } | Sort-Object DisplayName | Export-Csv -Path "$outputFolderName\$appFolderName\$fileName2.csv" -Delimiter ";" -Append -NoTypeinformation
+        $appsList | Select-Object DisplayName, DisplayVersion, Publisher | Where-Object { $null -ne $_.DisplayName } | Sort-Object DisplayName | Export-Csv -Path "$outputFolderName\$appFolderName\$fileName2.csv" -Delimiter ";" -NoTypeinformation
     }
     elseif ($choice -eq 2) {
-        $combinedData | ConvertTo-Json | out-File "$outputFolderName\$fileName.json"
-        $appsList | Select-Object DisplayName, DisplayVersion, Publisher | Where-Object { $null -ne $_.DisplayName } | Sort-Object DisplayName | ConvertTo-Json | Out-File  "$outputFolderName\$appFolderName\$fileName2.json"
+        $combinedData | ConvertTo-Json | out-File "$outputFolderName\$fileName-$scanID.json"
+        $appsList | Select-Object DisplayName, DisplayVersion, Publisher | Where-Object { $null -ne $_.DisplayName } | Sort-Object DisplayName | ConvertTo-Json | Out-File  "$outputFolderName\$appFolderName\$fileName2.json" -Append 
     }
     else {
         Write-Host "Not valid."
-        menu
+        conversion
     }
 }
 
-menu
+conversion
