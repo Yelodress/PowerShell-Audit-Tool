@@ -105,4 +105,3 @@ If you're facing issues with this script, tell me [here](https://github.com/Yelo
 ###  <img src="https://api.iconify.design/material-symbols:note-stack-add-sharp.svg?color=%23cdd6f4" height="15"  alt=""> Optional (see [documentation](https://github.com/Yelodress/PowerShell-Audit-Tool/wiki/Documentation))
 - Specific user / group
 - Specific software
-- Nvidia CUDA cores number
