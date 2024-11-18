@@ -1,7 +1,7 @@
 <div align="center">
 <h1>PowerAudit</h1>
 <a href="https://github.com/Yelodress/PowerShell-Audit-Tool/releases"><img alt="Static Badge" src="https://img.shields.io/badge/windows_version-8.1_%7C_10_%7C_11-green?style=for-the-badge&logo=windows&labelColor=%23313244&color=%2389dceb" style="margin-right: 10px"></a>
-<a href="https://github.com/Yelodress/PowerShell-Audit-Tool/releases"><img alt="Static Badge" src="https://img.shields.io/badge/Any-%23f5a97f?style=for-the-badge&logo=linux&logoColor=white&label=Linux%20version&labelColor=%23313244&color=%23c6a0f6"></a>
+<a href="https://github.com/MicrosoftDocs/PowerShell-Docs/blob/main/reference/docs-conceptual/install/Installing-PowerShell-on-Linux.md"><img alt="Static Badge" src="https://img.shields.io/badge/see_ms_doc-%23f5a97f?style=for-the-badge&logo=linux&logoColor=white&label=Linux%20version&labelColor=%23313244&color=%23c6a0f6"></a>
 <a href="https://github.com/Yelodress/PowerShell-Audit-Tool/releases"><img alt="Static Badge" src="https://img.shields.io/badge/Release-v0.7.2-green?style=for-the-badge&labelColor=%23313244&color=%23a6e3a1" style="margin-right: 10px"> 
 </a>
 <h3>
