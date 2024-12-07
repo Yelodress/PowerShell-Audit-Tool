@@ -228,12 +228,12 @@ function conversion ($choice){
     $choice = Read-Host "Choice: "  
 
     if ($choice -eq 1) {
-        $combinedData | Export-Csv -Path "$outputFolderName\$fileName.csv" -Delimiter ";" -Append -NoTypeinformation
+        $combinedData | Export-Csv -Path "$outputFolderName\results.csv" -Delimiter ";" -Append -NoTypeinformation
         $appsList | Select-Object DisplayName, DisplayVersion, Publisher | Where-Object { $null -ne $_.DisplayName } | Sort-Object DisplayName | Export-Csv -Path "$outputFolderName\$appFolderName\$fileName2.csv" -Delimiter ";" -NoTypeinformation
     }
     elseif ($choice -eq 2) {
-        $combinedData | ConvertTo-Json | out-File "$outputFolderName\$fileName-$scanID.json"
-        $appsList | Select-Object DisplayName, DisplayVersion, Publisher | Where-Object { $null -ne $_.DisplayName } | Sort-Object DisplayName | ConvertTo-Json | Out-File  "$outputFolderName\$appFolderName\$fileName2.json" -Append 
+        $combinedData | ConvertTo-Json | out-File "$outputFolderName\results-$scanID.json"
+        $appsList | Select-Object DisplayName, DisplayVersion, Publisher | Where-Object { $null -ne $_.DisplayName } | Sort-Object DisplayName | ConvertTo-Json | Out-File  "$outputFolderName\$appFolderName\$fileName2.json"
     }
     else {
         Write-Host "Not valid."
