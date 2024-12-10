@@ -34,6 +34,7 @@ As a modular script, you can see all unused/optional functions in the [documenta
 ## 🚧 Roadmap:
 - adding the ability to choose the folder's name (maybe in a textbox)
 - Improve the progress-bar design
+- Retrieve all web extensions
 
 
 I'm open to all suggestions :)
