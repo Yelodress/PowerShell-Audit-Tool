@@ -21,7 +21,7 @@ As a modular script, you can see all unused/optional functions in the [documenta
 
 ## 📁 Ouput
 <pre>
-├── PowerAudit.(ps1)
+├── PowerAudit.ps1
 └── output
     ├── result.(csv/json) - contain computer specific informations
     └── apps-list
